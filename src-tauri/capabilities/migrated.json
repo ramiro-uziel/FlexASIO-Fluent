@@ -5,6 +5,16 @@
   "windows": ["main"],
   "permissions": [
     "path:default",
+    "fs:default",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        {
+          "path": "$HOME/*"
+        }
+      ]
+    },
+    "fs:allow-write-text-file",
     "event:default",
     "window:default",
     "window:allow-close",
@@ -19,6 +29,7 @@
     "menu:default",
     "tray:default",
     "shell:default",
-    "os:default"
+    "os:default",
+    "fs:default"
   ]
 }

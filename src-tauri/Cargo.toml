@@ -7,7 +7,7 @@ license = ""
 repository = ""
 default-run = "FlexASIOGUI"
 edition = "2021"
-rust-version = "1.60"
+rust-version = "1.75"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -28,6 +28,7 @@ hex = "0.4"
 windows-version = "0.1.1"
 tauri-plugin-os = "2.0.0-beta.3"
 tauri-plugin-shell = "2.0.0-beta.3"
+tauri-plugin-fs = "2.0.0-beta.11"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem and the built-in dev server is disabled.

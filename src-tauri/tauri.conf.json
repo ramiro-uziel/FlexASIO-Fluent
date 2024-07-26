@@ -35,10 +35,11 @@
     "windows": [
       {
         "title": "FlexASIO Fluent",
-        "width": 500,
-        "height": 650,
+        "width": 700,
+        "height": 800,
         "minWidth": 450,
         "minHeight": 610,
+        "center": true,
         "transparent": true,
         "decorations": false,
         "visible": false

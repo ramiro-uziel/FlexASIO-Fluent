@@ -15,6 +15,7 @@
     "@fluentui/svg-icons": "^1.1.249",
     "@tauri-apps/api": "^2.0.0-beta.15",
     "@tauri-apps/cli": "^2.0.0-beta.22",
+    "@tauri-apps/plugin-fs": "^2.0.0-beta.7",
     "@tauri-apps/plugin-os": "2.0.0-beta.7"
   },
   "devDependencies": {
