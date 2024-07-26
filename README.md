@@ -2,6 +2,8 @@
 
 GUI for [FlexASIO](https://github.com/dechamps/FlexASIO) TOML configuration files.
 
+![image](https://github.com/user-attachments/assets/89980704-0e99-4f0e-96af-4744209ec017)
+
 ---
 
 #### About
