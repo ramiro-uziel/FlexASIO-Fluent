@@ -7,15 +7,16 @@
     NumberBox,
     RadioButton,
     TextBlock,
-    ToggleSwitch,
   } from "fluent-svelte";
+  import Speaker from "@fluentui/svg-icons/icons/speaker_2_20_regular.svg";
+  import Microphone from "@fluentui/svg-icons/icons/mic_20_regular.svg";
   import Refresh from "@fluentui/svg-icons/icons/arrow_clockwise_20_regular.svg";
   import { createEventDispatcher, onMount } from "svelte";
   import { fly } from "svelte/transition";
   import { invoke } from "@tauri-apps/api/core";
   import { accentColor } from "$lib/stores";
   import { adjustBrightness } from "$lib/utils/utils";
-  import { cubicOut, elasticIn, elasticInOut } from "svelte/easing";
+  import { cubicOut } from "svelte/easing";
   import { browser } from "$app/environment";
 
   const dispatch = createEventDispatcher();
@@ -39,6 +40,18 @@
   export let selectedBackend: string;
   export let selectedInput: number;
   export let selectedOutput: number;
+
+  export let inputSetModes: boolean;
+  export let inputExclusive: boolean;
+  export let inputAutoconvert: boolean;
+
+  let inputSetModesEnabled: boolean;
+
+  export let outputSetModes: boolean;
+  export let outputExclusive: boolean;
+  export let outputAutoconvert: boolean;
+
+  let outputSetModesEnabled: boolean;
 
   export let Backend: {
     name: string;
@@ -119,6 +132,20 @@
     inputContent.style.height = `${outputHeight}px`;
   } else if (inputContent && !isWidescreen && originalInputHeight) {
     inputContent.style.height = originalInputHeight;
+  }
+
+  $: inputSetModesEnabled = !inputSetModes;
+
+  $: outputSetModesEnabled = !outputSetModes;
+
+  $: if (inputSetModesEnabled) {
+    inputAutoconvert = false;
+    inputExclusive = false;
+  }
+
+  $: if (outputSetModesEnabled) {
+    outputAutoconvert = false;
+    outputExclusive = false;
   }
 
   onMount(() => {
@@ -211,7 +238,10 @@
               --fds-control-slow-duration="0s"
             >
               <div class="flex flex-row justify-between">
-                <TextBlock variant="bodyStrong">Input</TextBlock>
+                <div class="flex flex-row gap-2">
+                  <Microphone></Microphone>
+                  <TextBlock variant="bodyStrong">Input</TextBlock>
+                </div>
                 <TextBlock
                   variant="body"
                   style="color: var(--fds-text-tertiary);"
@@ -267,21 +297,24 @@
                     --fds-accent-default={$accentColor}
                     --fds-accent-secondary={$accentColor}
                     --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                    >Set Modes</Checkbox
-                  >
+                    on:input={() => (inputSetModes = !inputSetModes)}
+                    >Set Modes
+                  </Checkbox>
                 </div>
                 <div class="flex flex-row gap-2">
                   <Checkbox
                     --fds-accent-default={$accentColor}
                     --fds-accent-secondary={$accentColor}
                     --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                    >Exclusive</Checkbox
+                    bind:checked={inputExclusive}
+                    bind:disabled={inputSetModesEnabled}>Exclusive</Checkbox
                   >
                   <Checkbox
                     --fds-accent-default={$accentColor}
                     --fds-accent-secondary={$accentColor}
                     --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                    >Autoconvert</Checkbox
+                    bind:checked={inputAutoconvert}
+                    bind:disabled={inputSetModesEnabled}>Autoconvert</Checkbox
                   >
                 </div>
               </div>
@@ -351,7 +384,10 @@
               --fds-control-slow-duration="0s"
             >
               <div class="flex flex-row justify-between">
-                <TextBlock variant="bodyStrong">Output</TextBlock>
+                <div class="flex flex-row gap-2">
+                  <Speaker></Speaker>
+                  <TextBlock variant="bodyStrong">Output</TextBlock>
+                </div>
                 <TextBlock
                   variant="body"
                   style="color: var(--fds-text-tertiary);"
@@ -407,21 +443,24 @@
                     --fds-accent-default={$accentColor}
                     --fds-accent-secondary={$accentColor}
                     --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                    >Set Modes</Checkbox
-                  >
+                    on:input={() => (outputSetModes = !outputSetModes)}
+                    >Set Modes
+                  </Checkbox>
                 </div>
                 <div class="flex flex-row gap-2">
                   <Checkbox
                     --fds-accent-default={$accentColor}
                     --fds-accent-secondary={$accentColor}
                     --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                    >Exclusive</Checkbox
+                    bind:checked={outputExclusive}
+                    bind:disabled={outputSetModesEnabled}>Exclusive</Checkbox
                   >
                   <Checkbox
                     --fds-accent-default={$accentColor}
                     --fds-accent-secondary={$accentColor}
                     --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                    >Autoconvert</Checkbox
+                    bind:checked={outputAutoconvert}
+                    bind:disabled={outputSetModesEnabled}>Autoconvert</Checkbox
                   >
                 </div>
               </div>

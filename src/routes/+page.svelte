@@ -1,24 +1,12 @@
 <script lang="ts">
-  import {
-    Button,
-    Checkbox,
-    ComboBox,
-    Expander,
-    NumberBox,
-    RadioButton,
-    TextBlock,
-    TextBox,
-    Tooltip,
-  } from "fluent-svelte";
+  import { Button, Tooltip } from "fluent-svelte";
   import Save from "@fluentui/svg-icons/icons/save_20_regular.svg";
   import Folder from "@fluentui/svg-icons/icons/folder_20_regular.svg";
   import Checkmark from "@fluentui/svg-icons/icons/checkmark_20_regular.svg";
   import Copy from "@fluentui/svg-icons/icons/copy_20_regular.svg";
-  import Refresh from "@fluentui/svg-icons/icons/arrow_clockwise_20_regular.svg";
   import Pen from "@fluentui/svg-icons/icons/edit_20_regular.svg";
   import Flask from "$lib/icons/flask-solid.svg";
   import { onMount } from "svelte";
-  import { fade, fly } from "svelte/transition";
   import { invoke } from "@tauri-apps/api/core";
   import { ready } from "$lib/stores";
   import { accentColor } from "$lib/stores";
@@ -44,6 +32,13 @@
 
   let inputExpanded = true;
   let outputExpanded = true;
+
+  let inputSetModes = false;
+  let inputExclusive = false;
+  let inputAutoconvert = false;
+  let outputSetModes = false;
+  let outputExclusive = false;
+  let outputAutoconvert = false;
 
   let selectedBackend: string | null = "WASAPI";
   let selectedInput: number = -1;
@@ -147,6 +142,12 @@
                   {BufferSize}
                   {inputExpanded}
                   {outputExpanded}
+                  {inputSetModes}
+                  {inputExclusive}
+                  {inputAutoconvert}
+                  {outputSetModes}
+                  {outputExclusive}
+                  {outputAutoconvert}
                 ></DeviceEdit>
               </div>
             </div>
