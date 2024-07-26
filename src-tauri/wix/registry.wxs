@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <DirectoryRef Id="TARGETDIR">
+      <Component Id="CustomRegistryEntries" Guid="*">
+        <RegistryKey Root="HKLM"
+          Key="SOFTWARE\Fabrikat\FlexASIOGUI\Install">
+          <RegistryValue Type="string" Name="InstallPath" Value="[INSTALLDIR]" KeyPath="yes" />
+        </RegistryKey>
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+</Wix>

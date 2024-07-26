@@ -1,0 +1,51 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+  "build": {
+    "beforeBuildCommand": "bun run build",
+    "beforeDevCommand": "bun run dev",
+    "frontendDist": "../build",
+    "devUrl": "http://localhost:1420/"
+  },
+  "bundle": {
+    "active": true,
+    "category": "Utility",
+    "targets": "msi",
+    "icon": ["icons/icon.ico"],
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "wix": {
+        "template": "wix/template.wxs",
+        "fragmentPaths": ["wix/registry.wxs", "wix/Custom_InstallDirDlg.wxs"],
+        "componentRefs": ["CustomRegistryEntries"],
+        "bannerPath": "wix/banner.png",
+        "dialogImagePath": "wix/dialog.png"
+      }
+    },
+    "resources": ["portaudio_x64.dll"],
+    "longDescription": "TOML editor for FlexASIO configuration files",
+    "shortDescription": "FlexASIO Fluent"
+  },
+  "productName": "FlexASIO Fluent",
+  "version": "0.1.0",
+  "identifier": "com.flexasiofluent.dev",
+  "plugins": {},
+  "app": {
+    "windows": [
+      {
+        "title": "FlexASIO Fluent",
+        "width": 500,
+        "height": 650,
+        "minWidth": 450,
+        "minHeight": 610,
+        "transparent": true,
+        "decorations": false,
+        "visible": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  }
+}
