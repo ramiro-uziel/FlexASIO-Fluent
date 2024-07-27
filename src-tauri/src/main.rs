@@ -4,6 +4,11 @@
 )]
 
 use portaudio as pa;
+use rust_decimal::prelude::*;
+use rust_decimal::Decimal;
+use serde::de::Error as DeError;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::fs;
 use tauri::command;
 use tauri::Manager;
 use tauri::WindowEvent;
@@ -11,6 +16,52 @@ use window_vibrancy::apply_mica;
 use windows::Win32::Foundation::BOOL;
 use windows::Win32::Graphics::Dwm::DwmGetColorizationColor;
 use windows_version::OsVersion;
+
+#[allow(non_snake_case)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct Config {
+    backend: Option<String>,
+    bufferSizeSamples: Option<u32>,
+    input: Option<InputOutput>,
+    output: Option<InputOutput>,
+}
+#[allow(non_snake_case)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct InputOutput {
+    device: Option<String>,
+    #[serde(
+        default,
+        serialize_with = "serialize_option_decimal",
+        deserialize_with = "deserialize_option_decimal"
+    )]
+    suggestedLatencySeconds: Option<Decimal>,
+    wasapiExclusiveMode: Option<bool>,
+    wasapiAutoConvert: Option<bool>,
+    channels: Option<u8>,
+}
+
+fn serialize_option_decimal<S>(decimal: &Option<Decimal>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    match decimal {
+        Some(d) => serializer.serialize_some(&d.to_f64().unwrap()),
+        None => serializer.serialize_none(),
+    }
+}
+
+fn deserialize_option_decimal<'de, D>(deserializer: D) -> Result<Option<Decimal>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    match Option::<f64>::deserialize(deserializer) {
+        Ok(Some(f)) => Ok(Some(
+            Decimal::from_f64(f).ok_or_else(|| DeError::custom("Invalid decimal value"))?,
+        )),
+        Ok(None) => Ok(None),
+        Err(_) => Ok(None),
+    }
+}
 
 #[command]
 fn list_audio_devices(backend: String) -> Result<(Vec<String>, Vec<String>), String> {
@@ -65,6 +116,43 @@ fn list_audio_devices(backend: String) -> Result<(Vec<String>, Vec<String>), Str
     Ok((input_devices, output_devices))
 }
 
+fn read_toml_file(path: &str) -> Result<Config, Box<dyn std::error::Error>> {
+    let toml_str = fs::read_to_string(path)?;
+    let config: Config = toml::from_str(&toml_str)?;
+    Ok(config)
+}
+
+fn normalize_decimal(d: Option<Decimal>) -> Option<Decimal> {
+    d.map(|x| x.round_dp(1))
+}
+
+fn normalize_config(mut config: Config) -> Config {
+    if let Some(ref mut input) = config.input {
+        input.suggestedLatencySeconds = normalize_decimal(input.suggestedLatencySeconds);
+    }
+    if let Some(ref mut output) = config.output {
+        output.suggestedLatencySeconds = normalize_decimal(output.suggestedLatencySeconds);
+    }
+    config
+}
+
+#[command]
+fn load_config(toml_path: String) -> Result<Config, String> {
+    read_toml_file(&toml_path).map_err(|e| e.to_string())
+}
+
+#[command]
+fn save_config(toml_path: String, config: Config) -> Result<(), String> {
+    let normalized_config = normalize_config(config);
+    write_toml_file(&toml_path, &normalized_config).map_err(|e| e.to_string())
+}
+
+fn write_toml_file(path: &str, config: &Config) -> Result<(), Box<dyn std::error::Error>> {
+    let toml_str = toml::to_string(config)?;
+    fs::write(path, toml_str)?;
+    Ok(())
+}
+
 #[command]
 fn get_accent_color() -> Result<String, String> {
     let mut colorization: u32 = 0;
@@ -96,6 +184,8 @@ fn main() {
         .plugin(tauri_plugin_os::init())
         .invoke_handler(tauri::generate_handler![
             list_audio_devices,
+            load_config,
+            save_config,
             get_accent_color,
             get_windows_version
         ])

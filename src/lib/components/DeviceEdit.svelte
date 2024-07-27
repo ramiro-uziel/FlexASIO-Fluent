@@ -1,4 +1,10 @@
 <script lang="ts">
+  import { onMount, createEventDispatcher } from "svelte";
+  import { fly } from "svelte/transition";
+  import { cubicOut } from "svelte/easing";
+  import { browser } from "$app/environment";
+  import { adjustBrightness } from "$lib/utils/utils";
+  import { accentColor, inputDevices, outputDevices } from "$lib/stores";
   import {
     Button,
     Checkbox,
@@ -7,125 +13,56 @@
     NumberBox,
     RadioButton,
     TextBlock,
+    Tooltip,
   } from "fluent-svelte";
   import Speaker from "@fluentui/svg-icons/icons/speaker_2_20_regular.svg";
   import Microphone from "@fluentui/svg-icons/icons/mic_20_regular.svg";
+  import Reload from "@fluentui/svg-icons/icons/arrow_repeat_all_20_regular.svg";
   import Refresh from "@fluentui/svg-icons/icons/arrow_clockwise_20_regular.svg";
-  import { createEventDispatcher, onMount } from "svelte";
-  import { fly } from "svelte/transition";
-  import { invoke } from "@tauri-apps/api/core";
-  import { accentColor } from "$lib/stores";
-  import { adjustBrightness } from "$lib/utils/utils";
-  import { cubicOut } from "svelte/easing";
-  import { browser } from "$app/environment";
+  import Info from "@fluentui/svg-icons/icons/info_20_filled.svg";
+
+  export let inputExpanded: boolean;
+  export let inputSetModes: boolean;
+  export let inputExclusive: boolean;
+  export let inputAutoconvert: boolean;
+  export let selectedInput: number;
+  export let inputSetLatency: boolean;
+  export let inputLatency: number;
+  export let inputSetChannels: boolean;
+  export let inputChannels: number;
+
+  export let outputExpanded: boolean;
+  export let outputSetModes: boolean;
+  export let outputExclusive: boolean;
+  export let outputAutoconvert: boolean;
+  export let selectedOutput: number;
+  export let outputSetLatency: boolean;
+  export let outputLatency: number;
+  export let outputSetChannels: boolean;
+  export let outputChannels: number;
+
+  export let selectedBackend: string;
+  export let selectedBuffer: number | string;
+
+  export let Backend: {
+    name: string;
+    value: string;
+  }[];
+
+  export let BufferSize: (
+    | { name: string; value: string }
+    | { name: string; value: number }
+  )[];
 
   const dispatch = createEventDispatcher();
+
   let outputHeight: number;
   let inputContent: HTMLDivElement;
   let originalInputHeight: string;
   let isWidescreen = false;
 
-  interface DeviceItem {
-    name: string;
-    device: string;
-    value: number;
-  }
-
-  export let InputDevices = [] as DeviceItem[];
-  export let OutputDevices = [] as DeviceItem[];
-
-  export let inputExpanded: boolean;
-  export let outputExpanded: boolean;
-
-  export let selectedBackend: string;
-  export let selectedInput: number;
-  export let selectedOutput: number;
-
-  export let inputSetModes: boolean;
-  export let inputExclusive: boolean;
-  export let inputAutoconvert: boolean;
-
   let inputSetModesEnabled: boolean;
-
-  export let outputSetModes: boolean;
-  export let outputExclusive: boolean;
-  export let outputAutoconvert: boolean;
-
   let outputSetModesEnabled: boolean;
-
-  export let Backend: {
-    name: string;
-    value: number;
-  }[];
-
-  export let BufferSize: { name: string; value: number }[] = [];
-
-  async function updateDevices() {
-    if (selectedBackend === null) {
-      InputDevices = [{ name: "None", device: "", value: -1 }];
-      OutputDevices = [{ name: "None", device: "", value: -1 }];
-      return;
-    }
-    try {
-      selectedInput = selectedOutput = -1;
-      const [inputDevices, outputDevices] = await invoke<[string[], string[]]>(
-        "list_audio_devices",
-        { backend: selectedBackend }
-      );
-      const extractNameAndDevice = (device: string) => {
-        if (device.includes("bthhfenum.sys")) {
-          const match = device.match(/;\((.*?)\)/);
-          if (match) {
-            return { name: match[1].trim(), device: "Bluetooth" };
-          }
-        } else {
-          const match = device.match(/^(.*?)\s*\((.*?)\)$/);
-          if (match) {
-            return { name: match[1].trim(), device: match[2].trim() };
-          }
-        }
-        return { name: device, device: "" };
-      };
-
-      const sortAndReindex = (devices: string[]) => {
-        return devices
-          .map((device, index) => {
-            const { name, device: deviceName } = extractNameAndDevice(device);
-            return { name, device: deviceName, originalIndex: index };
-          })
-          .sort((a, b) => a.name.localeCompare(b.name))
-          .map((device, index) => ({
-            ...device,
-            value: index,
-          }));
-      };
-
-      InputDevices = [
-        { name: "None", device: "", value: -1 },
-        ...sortAndReindex(inputDevices),
-      ];
-
-      OutputDevices = [
-        { name: "None", device: "", value: -1 },
-        ...sortAndReindex(outputDevices),
-      ];
-
-      console.log("Input Devices:", InputDevices);
-      console.log("Output Devices:", OutputDevices);
-    } catch (error) {
-      console.error("Error changing backend and listing devices:", error);
-    }
-  }
-  function keypressBlur(event: KeyboardEvent) {
-    if (event.key === "Enter") {
-      const target = event.target as HTMLInputElement;
-      target.blur();
-    }
-  }
-
-  function checkScreenWidth() {
-    isWidescreen = window.innerWidth >= 685;
-  }
 
   $: if (outputHeight && inputContent && isWidescreen) {
     outputHeight += 15;
@@ -135,7 +72,6 @@
   }
 
   $: inputSetModesEnabled = !inputSetModes;
-
   $: outputSetModesEnabled = !outputSetModes;
 
   $: if (inputSetModesEnabled) {
@@ -148,11 +84,26 @@
     outputExclusive = false;
   }
 
-  onMount(() => {
-    updateDevices();
-    if (inputContent) {
-      originalInputHeight = inputContent.style.height || "auto";
+  function keypressBlur(event: KeyboardEvent) {
+    if (event.key === "Enter") {
+      const target = event.target as HTMLInputElement;
+      target.blur();
     }
+  }
+
+  function checkScreenWidth() {
+    isWidescreen = window.innerWidth >= 685;
+  }
+
+  function updateDevices() {
+    dispatch("updateDevices");
+  }
+
+  function refreshDevices() {
+    dispatch("refreshDevices");
+  }
+
+  onMount(() => {
     if (inputContent) {
       originalInputHeight = inputContent.style.height || "auto";
     }
@@ -168,15 +119,6 @@
   });
 </script>
 
-<!-- 
-<div class="w-full flex justify-center select-none">
-  <div
-    class="flex flex-col self-center w-full max-w-[1000px] min-w-[300px] mx-3 mb-2"
-  >
-    <TextBlock variant="title">Devices</TextBlock>
-  </div>
-</div>
- -->
 <div class="flex flex-col self-center w-full">
   <TextBlock variant="title">Devices</TextBlock>
 </div>
@@ -200,11 +142,12 @@
         class="rounded p-2 flex flex-row justify-between"
         style="background-color: var(--fds-card-background-default);"
       >
-        <div class="flex gap-2.5">
+        <div class="flex gap-2.5 items-center">
           <ComboBox
             items={Backend}
             editable={true}
-            bind:searchValue={selectedBackend}
+            bind:value={selectedBackend}
+            searchValue={selectedBackend}
             on:close={updateDevices}
             on:input={updateDevices}
             placeholder="Backend"
@@ -214,14 +157,28 @@
           ></ComboBox>
           <ComboBox
             items={BufferSize}
+            bind:value={selectedBuffer}
+            searchValue={selectedBuffer}
             editable={true}
             placeholder="Buffer"
-            class="max-w-[100px]"
+            class="max-w-[96px]"
             --fds-accent-default={$accentColor}
             --fds-accent-secondary={$accentColor}
           ></ComboBox>
+          {#if selectedBackend === "MME"}
+            <Tooltip
+              text="PortAudio bug: MME names may be incomplete."
+              placement="bottom"
+              delay={0}
+            >
+              <Info class="opacity-80"></Info>
+            </Tooltip>
+          {/if}
         </div>
-        <div>
+        <div class="space-x-1">
+          <!-- <Button on:click={refreshDevices}
+            ><Reload /><span class="ml-2">Reload</span></Button
+          > -->
           <Button on:click={updateDevices}
             ><Refresh /><span class="ml-2">Refresh</span></Button
           >
@@ -246,8 +203,14 @@
                   variant="body"
                   style="color: var(--fds-text-tertiary);"
                 >
-                  {InputDevices[selectedInput + 1]?.name ?? "None"}</TextBlock
-                >
+                  {($inputDevices[selectedInput + 1]?.label ?? "None").length >
+                  22
+                    ? ($inputDevices[selectedInput + 1]?.label ?? "None").slice(
+                        0,
+                        22
+                      ) + "..."
+                    : $inputDevices[selectedInput + 1]?.label ?? "None"}
+                </TextBlock>
               </div>
 
               <svelte:fragment slot="content">
@@ -260,7 +223,7 @@
                       : "max-height: calc(100vh - 386px);"
                     : ""}
                 >
-                  {#each InputDevices as { name, device, value }}
+                  {#each $inputDevices as { label, device, value }}
                     <div class="w-full">
                       <RadioButton
                         bind:group={selectedInput}
@@ -272,7 +235,7 @@
                           -10
                         )}
                         ><div class="flex flex-col">
-                          <TextBlock variant="body" class="">{name}</TextBlock>
+                          <TextBlock variant="body" class="">{label}</TextBlock>
                           <TextBlock
                             variant="caption"
                             style="color: var(--fds-text-tertiary);"
@@ -298,6 +261,7 @@
                     --fds-accent-secondary={$accentColor}
                     --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
                     on:input={() => (inputSetModes = !inputSetModes)}
+                    bind:checked={inputSetModes}
                     >Set Modes
                   </Checkbox>
                 </div>
@@ -334,6 +298,7 @@
                   --fds-accent-default={$accentColor}
                   --fds-accent-secondary={$accentColor}
                   --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+                  bind:checked={inputSetLatency}
                 ></Checkbox>
                 <NumberBox
                   placeholder="0"
@@ -344,6 +309,7 @@
                   --fds-accent-default={$accentColor}
                   --fds-accent-secondary={$accentColor}
                   --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+                  bind:value={inputLatency}
                 ></NumberBox>
               </div>
             </div>
@@ -361,6 +327,7 @@
                   --fds-accent-default={$accentColor}
                   --fds-accent-secondary={$accentColor}
                   --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+                  bind:checked={inputSetChannels}
                 ></Checkbox>
                 <NumberBox
                   placeholder="0"
@@ -371,6 +338,7 @@
                   --fds-accent-default={$accentColor}
                   --fds-accent-secondary={$accentColor}
                   --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+                  bind:value={inputChannels}
                 ></NumberBox>
               </div>
             </div>
@@ -392,8 +360,13 @@
                   variant="body"
                   style="color: var(--fds-text-tertiary);"
                 >
-                  {OutputDevices[selectedOutput + 1]?.name ?? "None"}</TextBlock
-                >
+                  {($outputDevices[selectedOutput + 1]?.label ?? "None")
+                    .length > 22
+                    ? (
+                        $outputDevices[selectedOutput + 1]?.label ?? "None"
+                      ).slice(0, 22) + "..."
+                    : $outputDevices[selectedOutput + 1]?.label ?? "None"}
+                </TextBlock>
               </div>
 
               <svelte:fragment slot="content">
@@ -406,7 +379,7 @@
                     : ""}
                   bind:clientHeight={outputHeight}
                 >
-                  {#each OutputDevices as { name, device, value }}
+                  {#each $outputDevices as { label, device, value }}
                     <div class="w-full">
                       <RadioButton
                         bind:group={selectedOutput}
@@ -418,7 +391,7 @@
                           -10
                         )}
                         ><div class="flex flex-col">
-                          <TextBlock variant="body" class="">{name}</TextBlock>
+                          <TextBlock variant="body" class="">{label}</TextBlock>
                           <TextBlock
                             variant="caption"
                             style="color: var(--fds-text-tertiary);"
@@ -444,6 +417,7 @@
                     --fds-accent-secondary={$accentColor}
                     --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
                     on:input={() => (outputSetModes = !outputSetModes)}
+                    bind:checked={outputSetModes}
                     >Set Modes
                   </Checkbox>
                 </div>
@@ -479,6 +453,7 @@
                   --fds-accent-default={$accentColor}
                   --fds-accent-secondary={$accentColor}
                   --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+                  bind:checked={outputSetLatency}
                 ></Checkbox>
                 <NumberBox
                   placeholder="0"
@@ -489,6 +464,7 @@
                   --fds-accent-default={$accentColor}
                   --fds-accent-secondary={$accentColor}
                   --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+                  bind:value={outputLatency}
                 ></NumberBox>
               </div>
             </div>
@@ -506,6 +482,7 @@
                   --fds-accent-default={$accentColor}
                   --fds-accent-secondary={$accentColor}
                   --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+                  bind:checked={outputSetChannels}
                 ></Checkbox>
                 <NumberBox
                   placeholder="0"
@@ -516,6 +493,7 @@
                   --fds-accent-default={$accentColor}
                   --fds-accent-secondary={$accentColor}
                   --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+                  bind:value={outputChannels}
                 ></NumberBox>
               </div>
             </div>

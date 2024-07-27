@@ -29,6 +29,8 @@ windows-version = "0.1.1"
 tauri-plugin-os = "2.0.0-beta.3"
 tauri-plugin-shell = "2.0.0-beta.3"
 tauri-plugin-fs = "2.0.0-beta.11"
+toml = "0.8.16"
+rust_decimal = "1.35.0"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem and the built-in dev server is disabled.
