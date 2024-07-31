@@ -179,7 +179,7 @@
           <!-- <Button on:click={refreshDevices}
             ><Reload /><span class="ml-2">Reload</span></Button
           > -->
-          <Button on:click={updateDevices}
+          <Button on:click={refreshDevices}
             ><Refresh /><span class="ml-2">Refresh</span></Button
           >
         </div>

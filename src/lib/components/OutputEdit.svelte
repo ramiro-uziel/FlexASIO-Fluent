@@ -4,9 +4,7 @@
   import { writable } from "svelte/store";
   import type { Writable } from "svelte/store";
   import { onMount } from "svelte";
-  import { Button, TextBlock } from "fluent-svelte";
-  import Save from "@fluentui/svg-icons/icons/save_20_regular.svg";
-  import Folder from "@fluentui/svg-icons/icons/folder_20_regular.svg";
+  import { TextBlock } from "fluent-svelte";
   import { fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
 

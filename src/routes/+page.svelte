@@ -33,6 +33,18 @@
     channels: number | null;
   }
 
+  async function getTomlPath() {
+    try {
+      const homeDir = await path.homeDir();
+      const tomlPath = await path.join(homeDir, "FlexASIO.toml");
+      return tomlPath;
+    } catch (error) {
+      console.error("Error getting TOML path:", error);
+    }
+  }
+
+  let tomlPath: string | undefined;
+
   const Backend = [
     { name: "MME", value: "MME" },
     { name: "DirectSound", value: "DirectSound" },
@@ -203,11 +215,11 @@
     ]);
   }
 
-  async function getBackend(config: Config) {
+  function getBackend(config: Config) {
     selectedBackend = backendMapping[config.backend];
   }
 
-  async function getLatency(config: Config) {
+  function getLatency(config: Config) {
     if (config.input.suggestedLatencySeconds !== null) {
       inputSetLatency = true;
       inputLatency = config.input.suggestedLatencySeconds;
@@ -225,7 +237,7 @@
     }
   }
 
-  async function getChannels(config: Config) {
+  function getChannels(config: Config) {
     if (config.input.channels !== null) {
       inputSetChannels = true;
       inputChannels = config.input.channels;
@@ -249,13 +261,6 @@
   ): boolean {
     if (!original) return false;
 
-    console.log(
-      "Are they fucking the same",
-      JSON.stringify(original) === JSON.stringify(current)
-    );
-    console.log("Original", JSON.stringify(original));
-    console.log("Current", JSON.stringify(current));
-
     return (
       current.backend === original.backend &&
       current.bufferSizeSamples === original.bufferSizeSamples &&
@@ -267,26 +272,29 @@
   function updateListEdited() {
     if (!originalConfig) return;
 
+    const inputDeviceName =
+      selectedInput >= 0
+        ? get(inputDevices)[selectedInput + 1]?.name || ""
+        : "";
+    const outputDeviceName =
+      selectedOutput >= 0
+        ? get(outputDevices)[selectedOutput + 1]?.name || ""
+        : "";
+
     currentConfig = {
       backend: selectedBackend ? backendOkay[selectedBackend] : undefined,
       bufferSizeSamples:
         selectedBuffer === "Default" ? null : Number(selectedBuffer),
       input: {
         channels: inputSetChannels ? Number(inputChannels) : null,
-        device:
-          selectedInput >= 0
-            ? get(inputDevices)[selectedInput + 1]?.name || ""
-            : "",
+        device: inputDeviceName,
         suggestedLatencySeconds: inputSetLatency ? Number(inputLatency) : null,
         wasapiAutoConvert: inputSetModes ? inputAutoconvert : null,
         wasapiExclusiveMode: inputSetModes ? inputExclusive : null,
       },
       output: {
         channels: outputSetChannels ? Number(outputChannels) : null,
-        device:
-          selectedOutput >= 0
-            ? get(outputDevices)[selectedOutput + 1]?.name || ""
-            : "",
+        device: outputDeviceName,
         suggestedLatencySeconds: outputSetLatency
           ? Number(outputLatency)
           : null,
@@ -298,7 +306,6 @@
     listEdited = !compareConfigs(currentConfig, originalConfig);
   }
 
-  // Modify the existing reactive statement
   $: if (originalConfig && selectedBackend) {
     selectedBackend,
       selectedBuffer,
@@ -332,9 +339,6 @@
   }
 
   async function loadConfig() {
-    const homeDir = await path.homeDir();
-    const tomlPath = await path.join(homeDir, "FlexASIO.toml");
-
     try {
       const config: Config = await invoke("load_config", { tomlPath });
 
@@ -398,11 +402,6 @@
     }
   }
 
-  async function updateDevices() {
-    await getDevices();
-    labelDevices();
-  }
-
   async function updateDevicesList() {
     await getDevices();
     labelDevices();
@@ -410,22 +409,27 @@
     selectedOutput = -1;
   }
 
+  async function refreshDevices() {
+    await getDevices();
+    labelDevices();
+  }
+
   async function handleApply() {
     if (!editDevices) {
       outputEdit.saveTomlFile();
     } else {
-      const homeDir = await path.homeDir();
-      const tomlPath = await path.join(homeDir, "FlexASIO.toml");
       try {
         await invoke("save_config", { tomlPath, config: currentConfig });
       } catch (error) {
         console.error("Failed to save config", error);
       }
       listEdited = false;
+      await loadConfig();
     }
   }
 
   onMount(async () => {
+    tomlPath = await getTomlPath();
     await checkMica();
     await loadConfig();
     await getAccentColor();
@@ -484,7 +488,7 @@
                   bind:outputSetChannels
                   bind:outputChannels
                   on:updateDevices={updateDevicesList}
-                  on:refreshDevices={loadConfig}
+                  on:refreshDevices={refreshDevices}
                 ></DeviceEdit>
               </div>
             </div>

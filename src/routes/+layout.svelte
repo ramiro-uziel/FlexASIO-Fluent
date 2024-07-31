@@ -4,6 +4,8 @@
   import { ready } from "$lib/stores";
   import "../app.css";
 
+  let unlisten: (() => void) | undefined;
+
   onMount(async () => {
     const updateDarkMode = (theme: string) => {
       if (theme === "dark") {
@@ -12,25 +14,29 @@
         document.documentElement.classList.remove("dark");
       }
     };
-
-    const currentWindow = await getCurrentWindow();
+    const currentWindow = getCurrentWindow();
     const theme = await currentWindow.theme();
     updateDarkMode(theme?.toString() || "dark");
+    // await currentWindow.show();
+    // ready.set(true);
 
-    const unlisten = await currentWindow.onThemeChanged(
-      ({ payload: theme }) => {
+    try {
+      unlisten = await currentWindow.onThemeChanged(({ payload: theme }) => {
         updateDarkMode(theme);
-        console.log("New theme: " + theme);
-      }
-    );
+      });
+    } catch (error) {
+      console.error("Error during onMount:", error);
+    }
 
     currentWindow.show().then(() => {
       ready.set(true);
     });
+  });
 
-    onDestroy(() => {
+  onDestroy(() => {
+    if (unlisten) {
       unlisten();
-    });
+    }
   });
 </script>
 
