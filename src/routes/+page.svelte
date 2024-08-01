@@ -2,6 +2,8 @@
   import { onMount } from "svelte";
   import { get } from "svelte/store";
   import { invoke } from "@tauri-apps/api/core";
+  import { writeText, readText } from "@tauri-apps/plugin-clipboard-manager";
+  import { readTextFile } from "@tauri-apps/plugin-fs";
   import { path } from "@tauri-apps/api";
   import { dev } from "$app/environment";
   import { Button, Tooltip } from "fluent-svelte";
@@ -17,6 +19,7 @@
   import Copy from "@fluentui/svg-icons/icons/copy_20_regular.svg";
   import Pen from "@fluentui/svg-icons/icons/edit_20_regular.svg";
   import Flask from "$lib/icons/flask-solid.svg";
+  import { fade } from "svelte/transition";
 
   interface Config {
     backend: string;
@@ -428,6 +431,17 @@
     }
   }
 
+  async function handleCopy() {
+    try {
+      if (tomlPath) {
+        const content = await readTextFile(tomlPath);
+        await writeText(content);
+      }
+    } catch (error) {
+      console.error("Error copying the TOML file:", error);
+    }
+  }
+
   onMount(async () => {
     tomlPath = await getTomlPath();
     await checkMica();
@@ -436,8 +450,8 @@
   });
 </script>
 
-<div class="overflow-hidden w-full">
-  {#if $ready}
+{#if loaded}
+  <div class="overflow-hidden w-full">
     <WindowTitlebar class="h-10 overflow-hidden">
       <div class="pointer-events-none w-full">
         <div class="flex flex-row items-center align-middle p-2 gap-2 ml-1">
@@ -523,9 +537,13 @@
             >
           </div>
           <div class="flex gap-2.5">
-            <Button><Save /><span class="pl-1.5">Save</span></Button>
-            <Button><Folder /><span class="pl-1.5">Load</span></Button>
-            <Tooltip text="Copy the config"><Button><Copy /></Button></Tooltip>
+            <!-- <Button><Save /><span class="pl-1.5">Save</span></Button>
+            <Button><Folder /><span class="pl-1.5">Load</span></Button> -->
+            <Tooltip text="Copy the config"
+              ><Button on:click={handleCopy}
+                ><Copy /><span class="pl-1.5">Copy</span></Button
+              ></Tooltip
+            >
             <Tooltip text="Apply the config" alignment="end" offset={5}>
               <Button
                 on:click={handleApply}
@@ -533,15 +551,17 @@
                 --fds-accent-default={$accentColor}
                 --fds-accent-secondary={$accentColor}
                 --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                ><Checkmark /></Button
+                ><Checkmark
+                  class={variant === "accent" ? "fill-black" : ""}
+                /><span class="pl-1.5">Apply</span></Button
               >
             </Tooltip>
           </div>
         </div>
       </div>
     </div>
-  {/if}
-</div>
+  </div>
+{/if}
 
 <style>
   @import url("https://unpkg.com/fluent-svelte/theme.css");

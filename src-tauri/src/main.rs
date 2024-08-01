@@ -180,6 +180,7 @@ fn get_windows_version() -> (u32, u32, u32) {
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_os::init())
         .invoke_handler(tauri::generate_handler![

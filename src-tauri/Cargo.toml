@@ -1,7 +1,7 @@
 [package]
 name = "FlexASIOGUI"
 version = "0.1.0"
-description = "A Tauri App"
+description = "A GUI for FlexASIO"
 authors = ["you"]
 license = ""
 repository = ""
@@ -31,6 +31,7 @@ tauri-plugin-shell = "2.0.0-beta.3"
 tauri-plugin-fs = "2.0.0-beta.11"
 toml = "0.8.16"
 rust_decimal = "1.35.0"
+tauri-plugin-clipboard-manager = "2.1.0-beta.7"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem and the built-in dev server is disabled.

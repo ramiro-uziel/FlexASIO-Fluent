@@ -29,7 +29,7 @@
   },
   "productName": "FlexASIO Fluent",
   "version": "0.1.0",
-  "identifier": "com.flexasiofluent.dev",
+  "identifier": "com.FlexASIOFluent.dev",
   "plugins": {},
   "app": {
     "windows": [

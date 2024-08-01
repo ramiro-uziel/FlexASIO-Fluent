@@ -7,6 +7,13 @@
   import { TextBlock } from "fluent-svelte";
   import { fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
+  import {
+    Menu,
+    MenuItem,
+    IconMenuItem,
+    NativeIcon,
+    PredefinedMenuItem,
+  } from "@tauri-apps/api/menu";
 
   const tomlContent: Writable<string> = writable("");
   let tomlPath: string;
@@ -22,7 +29,7 @@
     try {
       const content = await readTextFile(tomlPath);
       tomlContent.set(content);
-      originalContent = content; // Store the original content
+      originalContent = content;
     } catch (error) {
       console.error("Error reading the TOML file:", error);
     }
@@ -46,6 +53,27 @@
     console.log("Text edited:", textEdited);
   }
 
+  async function showContextMenu(event: MouseEvent) {
+    event.preventDefault();
+
+    const menuItems = await Promise.all([
+      PredefinedMenuItem.new({ item: "Cut" }),
+      PredefinedMenuItem.new({ item: "Copy" }),
+      PredefinedMenuItem.new({ item: "Paste" }),
+      PredefinedMenuItem.new({ item: "Separator" }),
+      PredefinedMenuItem.new({ item: "SelectAll" }),
+      PredefinedMenuItem.new({ item: "Separator" }),
+      PredefinedMenuItem.new({ item: "Undo" }),
+      PredefinedMenuItem.new({ item: "Redo" }),
+    ]);
+
+    const menu = await Menu.new({
+      items: menuItems,
+    });
+
+    await menu.popup();
+  }
+
   onMount(async () => {
     await getTomlPath();
     readTomlFile();
@@ -60,21 +88,11 @@
   class="flex flex-col mt-0 mb-0 select-none items-center overflow-scroll gap-2.5 py-2"
   style="height: calc(100vh - 120px);"
 >
-  <!-- <div
-    class="rounded p-2 flex flex-row justify-between w-full"
-    style="background-color: var(--fds-card-background-default);"
-  >
-    <div class="flex flex-row gap-3">
-      <Button><Save /><span class="pl-1.5">Save As</span></Button>
-      <Button><Folder /><span class="pl-1.5">Load From</span></Button>
-    </div>
-  </div> -->
-  <!-- <button on:click={() => saveTomlFile($tomlContent)}>Save</button> -->
-
-  <div class="text-box-container">
+  <div class="text-box-container" data-enable-context-menu>
     <textarea
       bind:value={$tomlContent}
       on:input={(e) => handleTextareaChange(e)}
+      on:contextmenu={showContextMenu}
     ></textarea>
     <div class="text-box-underline" />
     <slot />

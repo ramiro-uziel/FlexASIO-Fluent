@@ -30,6 +30,8 @@
     "tray:default",
     "shell:default",
     "os:default",
-    "fs:default"
+    "fs:default",
+    "clipboard-manager:default",
+    "clipboard-manager:allow-write-text"
   ]
 }
