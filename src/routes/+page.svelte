@@ -3,7 +3,7 @@
   import { get } from "svelte/store";
   import { invoke } from "@tauri-apps/api/core";
   import { writeText, readText } from "@tauri-apps/plugin-clipboard-manager";
-  import { readTextFile } from "@tauri-apps/plugin-fs";
+  import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
   import { path } from "@tauri-apps/api";
   import { dev } from "$app/environment";
   import { Button, Tooltip } from "fluent-svelte";
@@ -343,6 +343,35 @@
 
   async function loadConfig() {
     try {
+      let configPath = await getTomlPath();
+
+      if (!configPath) {
+        // If we couldn't get the TOML path, attempt to create it manually
+        const homeDir = await path.homeDir();
+        configPath = await path.join(homeDir, "FlexASIO.toml");
+        console.log("Manually created the path:", configPath);
+      }
+
+      let configContent: string;
+
+      try {
+        // Attempt to read the config file
+        configContent = await readTextFile(configPath);
+      } catch (error) {
+        // If reading the file fails (e.g., it doesn't exist), create it with the default config
+        console.warn(
+          "Config file not found or could not be read, creating a default config."
+        );
+
+        configContent = `backend = "Windows WASAPI"
+[input]
+device = ""
+[output]
+device = ""`;
+
+        await writeTextFile(configPath, configContent);
+      }
+
       const config: Config = await invoke("load_config", { tomlPath });
 
       originalConfig = JSON.parse(JSON.stringify(config));
