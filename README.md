@@ -8,7 +8,7 @@ GUI for [FlexASIO](https://github.com/dechamps/FlexASIO) TOML configuration file
 
 #### About
 
-I have been using FlexASIO for my music production needs. I used to configure with [flipswitchingmonkey's editor](https://github.com/flipswitchingmonkey/FlexASIO_GUI). However, I wanted to add additional functionality and a modern user interface. (I wanted dark mode).
+I have been using FlexASIO for my music production needs. I used to configure with [flipswitchingmonkey's editor](https://github.com/flipswitchingmonkey/FlexASIO_GUI). However, I wanted to add additional functionality and a modern user interface (wanted dark mode).
 
 I wanted to keep it lightweight and fast, so Tauri seemed like a decent tradeoff between making it easy for myself to develop and mantain, and making it pretty.
 
