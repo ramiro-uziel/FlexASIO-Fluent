@@ -180,6 +180,7 @@ fn get_windows_version() -> (u32, u32, u32) {
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_os::init())
@@ -195,7 +196,7 @@ fn main() {
 
             #[cfg(target_os = "windows")]
             {
-                let version = OsVersion::current();
+                let version: OsVersion = OsVersion::current();
 
                 if version.major > 10 || (version.major == 10 && version.build >= 22000) {
                     apply_mica(&window, None).expect("Failed to apply mica effect");

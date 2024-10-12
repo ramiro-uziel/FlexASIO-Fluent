@@ -1,32 +1,32 @@
 <script lang="ts">
-  import { osType } from "$lib/utils/os"
-  import { cn } from "$lib/utils/utils"
-  import type { WindowControlsProps } from "./types"
-  import WindowControls from "./WindowControls.svelte"
+  import { osType } from "$lib/utils/os";
+  import { cn } from "$lib/utils/utils";
+  import type { WindowControlsProps } from "./types";
+  import WindowControls from "./WindowControls.svelte";
 
-  export let controlsOrder = "system"
-  export let windowControlsProps: WindowControlsProps = {}
+  export let controlsOrder = "system";
+  export let windowControlsProps: WindowControlsProps = {};
 
   const left =
     controlsOrder === "left" ||
     (controlsOrder === "platform" &&
       windowControlsProps?.platform === "macos") ||
-    (controlsOrder === "system" && osType === "macos")
+    (controlsOrder === "system" && osType === "macos");
 
   const props = (ml: string) => {
-    if (windowControlsProps?.justify !== undefined) return windowControlsProps
+    if (windowControlsProps?.justify !== undefined) return windowControlsProps;
 
     const {
       justify: windowControlsJustify,
       class: windowControlsClass,
       ...restProps
-    } = windowControlsProps
+    } = windowControlsProps;
     return {
       justify: false,
       class: cn(windowControlsClass, ml),
-      ...restProps
-    }
-  }
+      ...restProps,
+    };
+  };
 </script>
 
 <div

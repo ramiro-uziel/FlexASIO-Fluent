@@ -1,10 +1,12 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { get } from "svelte/store";
   import { invoke } from "@tauri-apps/api/core";
-  import { writeText, readText } from "@tauri-apps/plugin-clipboard-manager";
-  import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
-  import { path } from "@tauri-apps/api";
+  import {
+    saveWindowState,
+    restoreStateCurrent,
+    StateFlags,
+  } from "@tauri-apps/plugin-window-state";
   import { dev } from "$app/environment";
   import { Button, Tooltip } from "fluent-svelte";
   import WindowTitlebar from "$lib/WindowTitlebar.svelte";
@@ -13,71 +15,15 @@
   import { inputDevices, outputDevices, ready, accentColor } from "$lib/stores";
   import type { DeviceItem } from "$lib/stores";
   import { adjustBrightness } from "$lib/utils/utils";
+  import { loadConfig, saveConfig, copyConfig } from "$lib/utils/config";
+  import { getDevices, labelDevices } from "$lib/utils/device";
+  import { checkMica, getAccentColor } from "$lib/utils/system";
+  import { compareConfigs } from "$lib/utils/compare";
+  import type { Config } from "$lib/types";
   import Checkmark from "@fluentui/svg-icons/icons/checkmark_20_regular.svg?component";
   import Copy from "@fluentui/svg-icons/icons/copy_20_regular.svg?component";
   import Pen from "@fluentui/svg-icons/icons/edit_20_regular.svg?component";
   import Flask from "$lib/icons/flask-solid.svg?component";
-  import { fade } from "svelte/transition";
-
-  interface Config {
-    backend: string;
-    bufferSizeSamples: number | null;
-    input: InputOutput;
-    output: InputOutput;
-  }
-
-  interface InputOutput {
-    device: string | null;
-    suggestedLatencySeconds: number | null;
-    wasapiExclusiveMode: boolean | null;
-    wasapiAutoConvert: boolean | null;
-    channels: number | null;
-  }
-
-  async function getTomlPath() {
-    try {
-      const homeDir = await path.homeDir();
-      const tomlPath = await path.join(homeDir, "FlexASIO.toml");
-      return tomlPath;
-    } catch (error) {
-      console.error("Error getting TOML path:", error);
-    }
-  }
-
-  let tomlPath: string | undefined;
-
-  const Backend = [
-    { name: "MME", value: "MME" },
-    { name: "DirectSound", value: "DirectSound" },
-    { name: "WASAPI", value: "WASAPI" },
-    { name: "WDM-KS", value: "WDM-KS" },
-  ];
-
-  const backendMapping: Record<string, string> = {
-    MME: "MME",
-    "Windows DirectSound": "DirectSound",
-    "Windows WASAPI": "WASAPI",
-    "Windows WDM-KS": "WDM-KS",
-  };
-
-  const backendOkay: Record<string, string> = {
-    MME: "MME",
-    DirectSound: "Windows DirectSound",
-    WASAPI: "Windows WASAPI",
-    "WDM-KS": "Windows WDM-KS",
-  };
-
-  let BufferSize = [
-    { name: "Default", value: "Default" },
-    { name: "0", value: "0" },
-    { name: "16", value: "16" },
-    { name: "32", value: "32" },
-    { name: "64", value: "64" },
-    { name: "128", value: "128" },
-    { name: "256", value: "256" },
-    { name: "512", value: "512" },
-    { name: "1024", value: "1024" },
-  ];
 
   let selectedBackend: string;
   let selectedBuffer: string | number;
@@ -101,8 +47,6 @@
   let outputSetChannels = false;
   let outputChannels = 0;
   let toggleName = "Edit Output";
-  let inputDevicesList: string[] = [];
-  let outputDevicesList: string[] = [];
 
   let outputEdit: OutputEdit;
 
@@ -116,175 +60,43 @@
 
   let loaded = false;
 
+  const Backend = [
+    { name: "MME", value: "MME" },
+    { name: "DirectSound", value: "DirectSound" },
+    { name: "WASAPI", value: "WASAPI" },
+    { name: "WDM-KS", value: "WDM-KS" },
+  ];
+
+  const backendMapping: Record<string, string> = {
+    MME: "MME",
+    "Windows DirectSound": "DirectSound",
+    "Windows WASAPI": "WASAPI",
+    "Windows WDM-KS": "WDM-KS",
+  };
+
+  const backendOkay: Record<string, string> = {
+    MME: "MME",
+    DirectSound: "Windows DirectSound",
+    WASAPI: "Windows WASAPI",
+    "WDM-KS": "Windows WDM-KS",
+  };
+
+  const BufferSize = [
+    { name: "Default", value: "Default" },
+    { name: "0", value: "0" },
+    { name: "16", value: "16" },
+    { name: "32", value: "32" },
+    { name: "64", value: "64" },
+    { name: "128", value: "128" },
+    { name: "256", value: "256" },
+    { name: "512", value: "512" },
+    { name: "1024", value: "1024" },
+  ];
+
   async function toggleDevices() {
     editDevices = !editDevices;
     toggleName = editDevices ? "Edit Output" : "Edit Devices";
-    await loadConfig();
-  }
-
-  async function getAccentColor() {
-    try {
-      const color = adjustBrightness(
-        await invoke<string>("get_accent_color"),
-        70
-      );
-      accentColor.update(() => color);
-    } catch (error) {
-      console.error("Error getting accent color:", error);
-    }
-  }
-
-  async function checkMica() {
-    try {
-      const [major, , build] = await invoke<[number, number, number]>(
-        "get_windows_version"
-      );
-      if (!(major > 10 || (major === 10 && build >= 22000))) {
-        document.body.classList.add("apply-background-color");
-      }
-    } catch (error) {
-      console.error(`Error fetching Windows version: ${error}`);
-    }
-  }
-
-  async function getDevices() {
-    try {
-      const result = await invoke<[string[], string[]]>("list_audio_devices", {
-        backend: selectedBackend,
-      });
-      inputDevicesList = result[0];
-      outputDevicesList = result[1];
-    } catch (error) {
-      console.error("Error getting devices:", error);
-      inputDevicesList = [];
-      outputDevicesList = [];
-    }
-  }
-
-  function labelDevices() {
-    const extractNameAndDevice = (
-      device: string,
-      selectedBackend: string
-    ): DeviceItem => {
-      if (selectedBackend === "MME") {
-        const parts = device.split("(");
-        if (parts.length > 1) {
-          const name = parts[0].trim();
-          const deviceValue = parts[1].replace(/\)/g, "").trim();
-          return { name: device, label: name, device: deviceValue, value: -1 };
-        }
-      } else if (device.includes("bthhfenum.sys")) {
-        const match = device.match(/;\((.*?)\)/);
-        if (match) {
-          return {
-            name: device,
-            label: match[1].trim(),
-            device: "Bluetooth",
-            value: -1,
-          };
-        }
-      } else {
-        const match = device.match(/^(.*?)\s*\((.*?)\)$/);
-        if (match) {
-          return {
-            name: device,
-            label: match[1].trim(),
-            device: match[2].trim(),
-            value: -1,
-          };
-        }
-      }
-      return { name: device, label: device, device: "", value: -1 };
-    };
-
-    const sortAndReindex = (devices: string[]) =>
-      devices
-        .map((device, index) => ({
-          ...extractNameAndDevice(device, selectedBackend),
-          originalIndex: index,
-        }))
-        .sort((a, b) => a.label.localeCompare(b.label))
-        .map((device, index) => ({ ...device, value: index }));
-
-    inputDevices.set([
-      { name: "", label: "None", device: "", value: -1 },
-      ...sortAndReindex(inputDevicesList),
-    ]);
-    outputDevices.set([
-      { name: "", label: "None", device: "", value: -1 },
-      ...sortAndReindex(outputDevicesList),
-    ]);
-  }
-
-  function getBackend(config: Config) {
-    selectedBackend = backendMapping[config.backend];
-  }
-
-  function getLatency(config: Config) {
-    if (config.input.suggestedLatencySeconds !== null) {
-      inputSetLatency = true;
-      inputLatency = config.input.suggestedLatencySeconds;
-    } else {
-      inputSetLatency = false;
-      inputLatency = 0;
-    }
-
-    if (config.output.suggestedLatencySeconds !== null) {
-      outputSetLatency = true;
-      outputLatency = config.output.suggestedLatencySeconds;
-    } else {
-      outputSetLatency = false;
-      outputLatency = 0;
-    }
-  }
-
-  function getChannels(config: Config) {
-    if (config.input.channels !== null) {
-      inputSetChannels = true;
-      inputChannels = config.input.channels;
-    } else {
-      inputSetChannels = false;
-      inputChannels = 0;
-    }
-
-    if (config.output.channels !== null) {
-      outputSetChannels = true;
-      outputChannels = config.output.channels;
-    } else {
-      outputSetChannels = false;
-      outputChannels = 0;
-    }
-  }
-
-  function compareConfigs(
-    current: Partial<Config>,
-    original: Config | null
-  ): boolean {
-    if (!original) return false;
-
-    const compareObjects = (obj1: any, obj2: any): boolean => {
-      const keys1 = Object.keys(obj1);
-      const keys2 = Object.keys(obj2);
-
-      if (keys1.length !== keys2.length) return false;
-
-      for (const key of keys1) {
-        if (typeof obj1[key] === "object" && obj1[key] !== null) {
-          if (!compareObjects(obj1[key], obj2[key])) return false;
-        } else if (obj1[key] !== obj2[key]) {
-          return false;
-        }
-      }
-
-      return true;
-    };
-
-    return (
-      current.backend === original.backend &&
-      current.bufferSizeSamples === original.bufferSizeSamples &&
-      compareObjects(current.input, original.input) &&
-      compareObjects(current.output, original.output)
-    );
+    await loadAndSetConfig();
   }
 
   function updateListEdited() {
@@ -326,7 +138,6 @@
     };
 
     listEdited = !compareConfigs(currentConfig, originalConfig);
-    console.log("List edited:", listEdited);
   }
 
   $: if (originalConfig && selectedBackend) {
@@ -362,145 +173,105 @@
     }
   }
 
-  async function loadConfig() {
-    try {
-      let configPath = await getTomlPath();
+  async function loadAndSetConfig() {
+    const config = await loadConfig();
+    originalConfig = JSON.parse(JSON.stringify(config));
 
-      if (!configPath) {
-        // If we couldn't get the TOML path, attempt to create it manually
-        const homeDir = await path.homeDir();
-        configPath = await path.join(homeDir, "FlexASIO.toml");
-        console.log("Manually created the path:", configPath);
-      }
+    selectedBackend = backendMapping[config.backend];
+    selectedBuffer =
+      config.bufferSizeSamples === null
+        ? "Default"
+        : config.bufferSizeSamples.toString();
 
-      let configContent: string;
+    // Get devices
+    await getDevices(selectedBackend);
+    // Label devices
+    await labelDevices(selectedBackend);
 
-      try {
-        // Attempt to read the config file
-        configContent = await readTextFile(configPath);
-      } catch (error) {
-        // If reading the file fails (e.g., it doesn't exist), create it with the default config
-        console.warn(
-          "Config file not found or could not be read, creating a default config."
-        );
+    const inputDevicesValue = get(inputDevices);
+    const outputDevicesValue = get(outputDevices);
 
-        configContent = `backend = "Windows WASAPI"
-[input]
-device = ""
-[output]
-device = ""`;
+    selectedInput =
+      inputDevicesValue.findIndex((d) => d.name === config.input.device) - 1;
+    selectedOutput =
+      outputDevicesValue.findIndex((d) => d.name === config.output.device) - 1;
 
-        await writeTextFile(configPath, configContent);
-      }
+    if (selectedInput === -2) selectedInput = -1;
+    if (selectedOutput === -2) selectedOutput = -1;
 
-      const config: Config = await invoke("load_config", { tomlPath });
+    inputSetLatency = config.input.suggestedLatencySeconds !== null;
+    inputLatency = config.input.suggestedLatencySeconds || 0;
+    outputSetLatency = config.output.suggestedLatencySeconds !== null;
+    outputLatency = config.output.suggestedLatencySeconds || 0;
 
-      originalConfig = JSON.parse(JSON.stringify(config));
+    inputSetChannels = config.input.channels !== null;
+    inputChannels = config.input.channels || 0;
+    outputSetChannels = config.output.channels !== null;
+    outputChannels = config.output.channels || 0;
 
-      await getBackend(config);
+    if (selectedBackend === "WASAPI") {
+      inputSetModes =
+        config.input.wasapiExclusiveMode !== null ||
+        config.input.wasapiAutoConvert !== null;
+      inputExclusive = config.input.wasapiExclusiveMode || false;
+      inputAutoconvert = config.input.wasapiAutoConvert || false;
 
-      if (config.bufferSizeSamples === null) {
-        selectedBuffer = "Default";
-      } else {
-        selectedBuffer = config.bufferSizeSamples.toString();
-      }
-
-      await getDevices();
-      labelDevices();
-
-      const inputDevicesValue = get(inputDevices);
-      const outputDevicesValue = get(outputDevices);
-
-      selectedInput =
-        inputDevicesValue.findIndex((d) => d.name === config.input.device) - 1;
-      selectedOutput =
-        outputDevicesValue.findIndex((d) => d.name === config.output.device) -
-        1;
-
-      if (selectedInput === -2) selectedInput = -1;
-      if (selectedOutput === -2) selectedOutput = -1;
-
-      await getLatency(config);
-      await getChannels(config);
-
-      if (selectedBackend === "WASAPI") {
-        if (
-          config.input.wasapiExclusiveMode ||
-          config.input.wasapiAutoConvert !== null
-        ) {
-          inputSetModes = true;
-          inputExclusive = config.input.wasapiExclusiveMode ?? false;
-          inputAutoconvert = config.input.wasapiAutoConvert ?? false;
-        } else {
-          inputSetModes = false;
-          inputExclusive = false;
-          inputAutoconvert = false;
-        }
-
-        if (
-          config.output.wasapiExclusiveMode ||
-          config.output.wasapiAutoConvert !== null
-        ) {
-          outputSetModes = true;
-          outputExclusive = config.output.wasapiExclusiveMode ?? false;
-          outputAutoconvert = config.output.wasapiAutoConvert ?? false;
-        } else {
-          outputSetModes = false;
-          outputExclusive = false;
-          outputAutoconvert = false;
-        }
-      }
-
-      loaded = true;
-      updateListEdited();
-    } catch (error) {
-      console.error("Failed to load config", error);
+      outputSetModes =
+        config.output.wasapiExclusiveMode !== null ||
+        config.output.wasapiAutoConvert !== null;
+      outputExclusive = config.output.wasapiExclusiveMode || false;
+      outputAutoconvert = config.output.wasapiAutoConvert || false;
     }
+    updateListEdited();
+    loaded = true;
   }
 
   async function updateDevicesList() {
-    await getDevices();
-    labelDevices();
+    await getDevices(selectedBackend);
+    await labelDevices(selectedBackend);
     selectedInput = -1;
     selectedOutput = -1;
+    updateListEdited();
   }
 
   async function refreshDevices() {
-    await getDevices();
-    labelDevices();
+    await getDevices(selectedBackend);
+    await labelDevices(selectedBackend);
+    updateListEdited();
   }
 
   async function handleApply() {
     if (!editDevices) {
       outputEdit.saveTomlFile();
     } else {
-      try {
-        await invoke("save_config", { tomlPath, config: currentConfig });
-      } catch (error) {
-        console.error("Failed to save config", error);
-      }
-      listEdited = false;
-      await loadConfig();
+      await saveConfig(currentConfig);
     }
-  }
-
-  async function handleCopy() {
-    try {
-      if (tomlPath) {
-        const content = await readTextFile(tomlPath);
-        await writeText(content);
-      }
-    } catch (error) {
-      console.error("Error copying the TOML file:", error);
-    }
+    listEdited = false;
+    textEdited = false;
+    await loadAndSetConfig();
   }
 
   onMount(async () => {
-    tomlPath = await getTomlPath();
     await checkMica();
-    await loadConfig();
+    await loadAndSetConfig();
     await getAccentColor();
+
+    // Restore window state
+    // try {
+    //   await restoreStateCurrent(StateFlags.ALL);
+    // } catch (error) {
+    //   console.error("Failed to restore window state:", error);
+    // }
   });
+
+  // onDestroy(async () => {
+  //   // Save window state
+  //   try {
+  //     await saveWindowState(StateFlags.ALL);
+  //   } catch (error) {
+  //     console.error("Failed to save window state:", error);
+  //   }
+  // });
 </script>
 
 {#if loaded}
@@ -521,7 +292,7 @@ device = ""`;
           class="pointer-events-none flex flex-row items-center justify-end gap-2 w-full -mt-2 mr-2"
         >
           <span class="text-[12px]">Dev</span>
-          <Flask class="size-2.5"></Flask>
+          <Flask class="size-2.5" />
         </div>
       {/if}
     </WindowTitlebar>
@@ -556,12 +327,11 @@ device = ""`;
                   bind:outputChannels
                   on:updateDevices={updateDevicesList}
                   on:refreshDevices={refreshDevices}
-                ></DeviceEdit>
+                />
               </div>
             </div>
           </div>
-        {/if}
-        {#if !editDevices}
+        {:else}
           <div class="w-full flex justify-center select-none px-3">
             <div class="flex flex-col gap-3 self-center w-full rounded-lg">
               <div class="flex flex-col gap-2">
@@ -585,18 +355,16 @@ device = ""`;
       >
         <div class="flex flex-row justify-between w-full">
           <div class="flex gap-2.5">
-            <Button on:click={toggleDevices}
-              ><Pen /><span class="pl-1.5">{toggleName}</span></Button
-            >
+            <Button on:click={toggleDevices}>
+              <Pen /><span class="pl-1.5">{toggleName}</span>
+            </Button>
           </div>
           <div class="flex gap-2.5">
-            <!-- <Button><Save /><span class="pl-1.5">Save</span></Button>
-            <Button><Folder /><span class="pl-1.5">Load</span></Button> -->
-            <Tooltip text="Copy the config"
-              ><Button on:click={handleCopy}
-                ><Copy /><span class="pl-1.5">Copy</span></Button
-              ></Tooltip
-            >
+            <Tooltip text="Copy the config">
+              <Button on:click={copyConfig}>
+                <Copy /><span class="pl-1.5">Copy</span>
+              </Button>
+            </Tooltip>
             <Tooltip text="Apply the config" alignment="end" offset={5}>
               <Button
                 on:click={handleApply}
@@ -604,10 +372,10 @@ device = ""`;
                 --fds-accent-default={$accentColor}
                 --fds-accent-secondary={$accentColor}
                 --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                ><Checkmark
-                  class={variant === "accent" ? "fill-black" : ""}
-                /><span class="pl-1.5">Apply</span></Button
               >
+                <Checkmark class={variant === "accent" ? "fill-black" : ""} />
+                <span class="pl-1.5">Apply</span>
+              </Button>
             </Tooltip>
           </div>
         </div>
