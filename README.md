@@ -1,3 +1,5 @@
+## [Download](https://github.com/ramiro-uziel/FlexASIO-Fluent/releases/)
+
 # FlexASIO Fluent
 
 GUI for [FlexASIO](https://github.com/dechamps/FlexASIO) TOML configuration files.
@@ -5,9 +7,6 @@ GUI for [FlexASIO](https://github.com/dechamps/FlexASIO) TOML configuration file
 ![image](https://github.com/user-attachments/assets/89980704-0e99-4f0e-96af-4744209ec017)
 
 ---
-
-## [Download](https://github.com/ramiro-uziel/FlexASIO-Fluent/releases/)
-
 
 #### About
 
