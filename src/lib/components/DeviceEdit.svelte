@@ -15,11 +15,10 @@
     TextBlock,
     Tooltip,
   } from "fluent-svelte";
-  import Speaker from "@fluentui/svg-icons/icons/speaker_2_20_regular.svg";
-  import Microphone from "@fluentui/svg-icons/icons/mic_20_regular.svg";
-  import Reload from "@fluentui/svg-icons/icons/arrow_repeat_all_20_regular.svg";
-  import Refresh from "@fluentui/svg-icons/icons/arrow_clockwise_20_regular.svg";
-  import Info from "@fluentui/svg-icons/icons/info_20_filled.svg";
+  import Speaker from "@fluentui/svg-icons/icons/speaker_2_20_regular.svg?component";
+  import Microphone from "@fluentui/svg-icons/icons/mic_20_regular.svg?component";
+  import Refresh from "@fluentui/svg-icons/icons/arrow_clockwise_20_regular.svg?component";
+  import Info from "@fluentui/svg-icons/icons/info_20_filled.svg?component";
 
   export let inputExpanded: boolean;
   export let inputSetModes: boolean;
@@ -91,6 +90,22 @@
     }
   }
 
+  function handleBufferInput(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const inputValue = target.value;
+
+    if (inputValue === "Default") {
+      selectedBuffer = "Default";
+    } else {
+      const numValue = parseInt(inputValue, 10);
+      if (!isNaN(numValue)) {
+        selectedBuffer = numValue.toString();
+      } else {
+        selectedBuffer = inputValue;
+      }
+    }
+  }
+
   function checkScreenWidth() {
     isWidescreen = window.innerWidth >= 685;
   }
@@ -158,12 +173,12 @@
           <ComboBox
             items={BufferSize}
             bind:value={selectedBuffer}
-            searchValue={selectedBuffer}
             editable={true}
             placeholder="Buffer"
             class="max-w-[96px]"
             --fds-accent-default={$accentColor}
             --fds-accent-secondary={$accentColor}
+            on:input={handleBufferInput}
           ></ComboBox>
           {#if selectedBackend === "MME"}
             <Tooltip
@@ -209,7 +224,7 @@
                         0,
                         22
                       ) + "..."
-                    : $inputDevices[selectedInput + 1]?.label ?? "None"}
+                    : ($inputDevices[selectedInput + 1]?.label ?? "None")}
                 </TextBlock>
               </div>
 
@@ -365,7 +380,7 @@
                     ? (
                         $outputDevices[selectedOutput + 1]?.label ?? "None"
                       ).slice(0, 22) + "..."
-                    : $outputDevices[selectedOutput + 1]?.label ?? "None"}
+                    : ($outputDevices[selectedOutput + 1]?.label ?? "None")}
                 </TextBlock>
               </div>
 

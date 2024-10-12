@@ -13,12 +13,10 @@
   import { inputDevices, outputDevices, ready, accentColor } from "$lib/stores";
   import type { DeviceItem } from "$lib/stores";
   import { adjustBrightness } from "$lib/utils/utils";
-  import Save from "@fluentui/svg-icons/icons/save_20_regular.svg";
-  import Folder from "@fluentui/svg-icons/icons/folder_20_regular.svg";
-  import Checkmark from "@fluentui/svg-icons/icons/checkmark_20_regular.svg";
-  import Copy from "@fluentui/svg-icons/icons/copy_20_regular.svg";
-  import Pen from "@fluentui/svg-icons/icons/edit_20_regular.svg";
-  import Flask from "$lib/icons/flask-solid.svg";
+  import Checkmark from "@fluentui/svg-icons/icons/checkmark_20_regular.svg?component";
+  import Copy from "@fluentui/svg-icons/icons/copy_20_regular.svg?component";
+  import Pen from "@fluentui/svg-icons/icons/edit_20_regular.svg?component";
+  import Flask from "$lib/icons/flask-solid.svg?component";
   import { fade } from "svelte/transition";
 
   interface Config {
@@ -71,15 +69,17 @@
 
   let BufferSize = [
     { name: "Default", value: "Default" },
-    { name: "0", value: 0 },
-    { name: "16", value: 16 },
-    { name: "32", value: 32 },
-    { name: "64", value: 64 },
-    { name: "128", value: 128 },
-    { name: "256", value: 256 },
-    { name: "512", value: 512 },
-    { name: "1024", value: 1024 },
+    { name: "0", value: "0" },
+    { name: "16", value: "16" },
+    { name: "32", value: "32" },
+    { name: "64", value: "64" },
+    { name: "128", value: "128" },
+    { name: "256", value: "256" },
+    { name: "512", value: "512" },
+    { name: "1024", value: "1024" },
   ];
+
+  let customBufferSize: number | null = null;
 
   let selectedBackend: string;
   let selectedBuffer: string | number;
@@ -287,7 +287,11 @@
     currentConfig = {
       backend: selectedBackend ? backendOkay[selectedBackend] : undefined,
       bufferSizeSamples:
-        selectedBuffer === "Default" ? null : Number(selectedBuffer),
+        selectedBuffer === "Default"
+          ? null
+          : isNaN(Number(selectedBuffer))
+            ? null
+            : Number(selectedBuffer),
       input: {
         channels: inputSetChannels ? Number(inputChannels) : null,
         device: inputDeviceName,
@@ -312,6 +316,7 @@
   $: if (originalConfig && selectedBackend) {
     selectedBackend,
       selectedBuffer,
+      customBufferSize,
       selectedInput,
       selectedOutput,
       inputSetModes,
@@ -378,8 +383,11 @@ device = ""`;
 
       await getBackend(config);
 
-      if (config.bufferSizeSamples === null) selectedBuffer = "Default";
-      else selectedBuffer = config.bufferSizeSamples;
+      if (config.bufferSizeSamples === null) {
+        selectedBuffer = "Default";
+      } else {
+        selectedBuffer = config.bufferSizeSamples.toString();
+      }
 
       await getDevices();
       labelDevices();
