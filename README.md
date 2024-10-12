@@ -6,6 +6,9 @@ GUI for [FlexASIO](https://github.com/dechamps/FlexASIO) TOML configuration file
 
 ---
 
+## [Download](https://github.com/ramiro-uziel/FlexASIO-Fluent/releases/)
+
+
 #### About
 
 I have been using FlexASIO for my music production needs. I used to configure with [flipswitchingmonkey's editor](https://github.com/flipswitchingmonkey/FlexASIO_GUI). However, I wanted to add additional functionality and a modern user interface (wanted dark mode).
