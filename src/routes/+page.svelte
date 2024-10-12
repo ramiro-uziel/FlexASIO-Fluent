@@ -79,8 +79,6 @@
     { name: "1024", value: "1024" },
   ];
 
-  let customBufferSize: number | null = null;
-
   let selectedBackend: string;
   let selectedBuffer: string | number;
   let editDevices = true;
@@ -264,11 +262,28 @@
   ): boolean {
     if (!original) return false;
 
+    const compareObjects = (obj1: any, obj2: any): boolean => {
+      const keys1 = Object.keys(obj1);
+      const keys2 = Object.keys(obj2);
+
+      if (keys1.length !== keys2.length) return false;
+
+      for (const key of keys1) {
+        if (typeof obj1[key] === "object" && obj1[key] !== null) {
+          if (!compareObjects(obj1[key], obj2[key])) return false;
+        } else if (obj1[key] !== obj2[key]) {
+          return false;
+        }
+      }
+
+      return true;
+    };
+
     return (
       current.backend === original.backend &&
       current.bufferSizeSamples === original.bufferSizeSamples &&
-      JSON.stringify(current.input) === JSON.stringify(original.input) &&
-      JSON.stringify(current.output) === JSON.stringify(original.output)
+      compareObjects(current.input, original.input) &&
+      compareObjects(current.output, original.output)
     );
   }
 
@@ -311,12 +326,12 @@
     };
 
     listEdited = !compareConfigs(currentConfig, originalConfig);
+    console.log("List edited:", listEdited);
   }
 
   $: if (originalConfig && selectedBackend) {
     selectedBackend,
       selectedBuffer,
-      customBufferSize,
       selectedInput,
       selectedOutput,
       inputSetModes,
@@ -339,6 +354,7 @@
   $: {
     if (loaded) {
       if (textEdited || listEdited) {
+        console.log("Text or list edited", textEdited, listEdited);
         variant = "accent";
       } else {
         variant = "standard";
