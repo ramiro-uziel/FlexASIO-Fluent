@@ -8,10 +8,8 @@
   import DeviceEdit from "$lib/components/DeviceEdit.svelte";
   import { inputDevices, outputDevices, ready, accentColor } from "$lib/stores";
   import { adjustBrightness } from "$lib/utils/utils";
-  import { loadConfig, saveConfig, copyConfig } from "$lib/utils/config";
-  import { getDevices, labelDevices } from "$lib/utils/device";
-  import { checkMica, getAccentColor } from "$lib/utils/system";
-  import { compareConfigs } from "$lib/utils/compare";
+  import { AudioManager } from "$lib/AudioManager";
+  import { SystemManager } from "$lib/SystemManager";
   import type { Config } from "$lib/types";
   import Checkmark from "@fluentui/svg-icons/icons/checkmark_20_regular.svg?component";
   import Copy from "@fluentui/svg-icons/icons/copy_20_regular.svg?component";
@@ -91,7 +89,6 @@
     toggleName = editDevices ? "Edit Output" : "Edit Devices";
     await loadAndSetConfig();
   }
-
   function updateListEdited() {
     if (!originalConfig) return;
 
@@ -130,7 +127,7 @@
       },
     };
 
-    listEdited = !compareConfigs(currentConfig, originalConfig);
+    listEdited = !AudioManager.compareConfigs(currentConfig, originalConfig);
   }
 
   $: if (originalConfig && selectedBackend) {
@@ -167,7 +164,7 @@
   }
 
   async function loadAndSetConfig() {
-    const config = await loadConfig();
+    const config = await AudioManager.loadConfig();
     originalConfig = JSON.parse(JSON.stringify(config));
 
     selectedBackend = backendMapping[config.backend];
@@ -176,8 +173,8 @@
         ? "Default"
         : config.bufferSizeSamples.toString();
 
-    await getDevices(selectedBackend);
-    await labelDevices(selectedBackend);
+    await AudioManager.getDevices(selectedBackend);
+    await AudioManager.labelDevices(selectedBackend);
 
     const inputDevicesValue = get(inputDevices);
     const outputDevicesValue = get(outputDevices);
@@ -218,16 +215,16 @@
   }
 
   async function updateDevicesList() {
-    await getDevices(selectedBackend);
-    await labelDevices(selectedBackend);
+    await AudioManager.getDevices(selectedBackend);
+    await AudioManager.labelDevices(selectedBackend);
     selectedInput = -1;
     selectedOutput = -1;
     updateListEdited();
   }
 
   async function refreshDevices() {
-    await getDevices(selectedBackend);
-    await labelDevices(selectedBackend);
+    await AudioManager.getDevices(selectedBackend);
+    await AudioManager.labelDevices(selectedBackend);
     updateListEdited();
   }
 
@@ -235,7 +232,7 @@
     if (!editDevices) {
       outputEdit.saveTomlFile();
     } else {
-      await saveConfig(currentConfig);
+      await AudioManager.saveConfig(currentConfig);
     }
     listEdited = false;
     textEdited = false;
@@ -243,9 +240,9 @@
   }
 
   onMount(async () => {
-    await checkMica();
+    await SystemManager.checkMica();
     await loadAndSetConfig();
-    await getAccentColor();
+    await SystemManager.getAccentColor();
   });
 </script>
 
@@ -336,7 +333,7 @@
           </div>
           <div class="flex gap-2.5">
             <Tooltip text="Copy the config">
-              <Button on:click={copyConfig}>
+              <Button on:click={AudioManager.copyConfig}>
                 <Copy /><span class="pl-1.5">Copy</span>
               </Button>
             </Tooltip>
