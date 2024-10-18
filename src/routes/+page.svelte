@@ -1,19 +1,12 @@
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
+  import { onMount } from "svelte";
   import { get } from "svelte/store";
-  import { invoke } from "@tauri-apps/api/core";
-  import {
-    saveWindowState,
-    restoreStateCurrent,
-    StateFlags,
-  } from "@tauri-apps/plugin-window-state";
   import { dev } from "$app/environment";
   import { Button, Tooltip } from "fluent-svelte";
   import WindowTitlebar from "$lib/WindowTitlebar.svelte";
   import OutputEdit from "$lib/components/OutputEdit.svelte";
   import DeviceEdit from "$lib/components/DeviceEdit.svelte";
   import { inputDevices, outputDevices, ready, accentColor } from "$lib/stores";
-  import type { DeviceItem } from "$lib/stores";
   import { adjustBrightness } from "$lib/utils/utils";
   import { loadConfig, saveConfig, copyConfig } from "$lib/utils/config";
   import { getDevices, labelDevices } from "$lib/utils/device";
@@ -183,9 +176,7 @@
         ? "Default"
         : config.bufferSizeSamples.toString();
 
-    // Get devices
     await getDevices(selectedBackend);
-    // Label devices
     await labelDevices(selectedBackend);
 
     const inputDevicesValue = get(inputDevices);
@@ -255,23 +246,7 @@
     await checkMica();
     await loadAndSetConfig();
     await getAccentColor();
-
-    // Restore window state
-    // try {
-    //   await restoreStateCurrent(StateFlags.ALL);
-    // } catch (error) {
-    //   console.error("Failed to restore window state:", error);
-    // }
   });
-
-  // onDestroy(async () => {
-  //   // Save window state
-  //   try {
-  //     await saveWindowState(StateFlags.ALL);
-  //   } catch (error) {
-  //     console.error("Failed to save window state:", error);
-  //   }
-  // });
 </script>
 
 {#if loaded}
