@@ -1,20 +1,22 @@
 <script lang="ts">
+  import { invoke } from "@tauri-apps/api/core";
   import { onMount } from "svelte";
   import { get } from "svelte/store";
-  import { dev } from "$app/environment";
+  import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { Button, Tooltip } from "fluent-svelte";
-  import WindowTitlebar from "$lib/WindowTitlebar.svelte";
   import OutputEdit from "$lib/components/OutputEdit.svelte";
   import DeviceEdit from "$lib/components/DeviceEdit.svelte";
   import { inputDevices, outputDevices, ready, accentColor } from "$lib/stores";
-  import { adjustBrightness } from "$lib/SystemManager";
+  import { adjustBrightness } from "$lib/utils/system";
   import { AudioManager } from "$lib/AudioManager";
-  import { SystemManager } from "$lib/SystemManager";
   import type { Config } from "$lib/types";
   import Checkmark from "@fluentui/svg-icons/icons/checkmark_20_regular.svg?component";
   import Copy from "@fluentui/svg-icons/icons/copy_20_regular.svg?component";
   import Pen from "@fluentui/svg-icons/icons/edit_20_regular.svg?component";
-  import Flask from "$lib/icons/flask-solid.svg?component";
+
+  // import Flask from "$lib/icons/flask-solid.svg?component";
+  // import { dev } from "$app/environment";
+  // import WindowTitlebar from "$lib/WindowTitlebar.svelte";
 
   let selectedBackend: string;
   let selectedBuffer: string | number;
@@ -239,16 +241,32 @@
     await loadAndSetConfig();
   }
 
+  async function getAccentColor() {
+    try {
+      const color = adjustBrightness(
+        await invoke<string>("get_accent_color"),
+        70
+      );
+      accentColor.update(() => color);
+    } catch (error) {
+      console.error("Error getting accent color:", error);
+    }
+  }
+
   onMount(async () => {
-    await SystemManager.checkMica();
+    let currentWindow = getCurrentWebviewWindow();
     await loadAndSetConfig();
-    await SystemManager.getAccentColor();
+    await getAccentColor();
+    setTimeout(async () => {
+      await currentWindow.show();
+      document.body.style.backgroundColor = "transparent";
+    }, 0);
   });
 </script>
 
 {#if loaded}
-  <div class="overflow-hidden w-full">
-    <WindowTitlebar class="h-10 overflow-hidden">
+  <div class="overflow-hidden w-full pt-1">
+    <!-- <WindowTitlebar class="h-10 overflow-hidden">
       <div class="pointer-events-none w-full">
         <div class="flex flex-row items-center align-middle p-2 gap-2 ml-1">
           <img
@@ -267,7 +285,7 @@
           <Flask class="size-2.5" />
         </div>
       {/if}
-    </WindowTitlebar>
+    </WindowTitlebar> -->
     <div class="flex flex-row w-full justify-center">
       <div class="flex flex-row w-full max-w-[1000px] min-w-[300px]">
         {#if editDevices}

@@ -34,19 +34,19 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "FlexASIO Fluent",
         "width": 700,
         "height": 800,
         "minWidth": 450,
         "minHeight": 610,
-        "center": true,
         "transparent": true,
-        "decorations": false,
-        "visible": false
+        "decorations": true,
+        "visible": false,
+        "windowEffects": {
+          "effects": ["mica"]
+        }
       }
-    ],
-    "security": {
-      "csp": null
-    }
+    ]
   }
 }

@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply bg-white transition-colors duration-100;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body {
+      @apply bg-black transition-colors duration-100;
+    }
+  }
+}
+
 /* width */
 ::-webkit-scrollbar {
   width: 5px;
