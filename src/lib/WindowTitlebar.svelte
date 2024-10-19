@@ -1,6 +1,6 @@
 <script lang="ts">
   import { osType } from "$lib/utils/os";
-  import { cn } from "$lib/utils/utils";
+  import { cn } from "$lib/utils/cn";
   import type { WindowControlsProps } from "./types";
   import WindowControls from "./WindowControls.svelte";
 

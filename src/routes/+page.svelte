@@ -7,7 +7,7 @@
   import OutputEdit from "$lib/components/OutputEdit.svelte";
   import DeviceEdit from "$lib/components/DeviceEdit.svelte";
   import { inputDevices, outputDevices, ready, accentColor } from "$lib/stores";
-  import { adjustBrightness } from "$lib/utils/utils";
+  import { adjustBrightness } from "$lib/SystemManager";
   import { AudioManager } from "$lib/AudioManager";
   import { SystemManager } from "$lib/SystemManager";
   import type { Config } from "$lib/types";

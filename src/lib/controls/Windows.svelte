@@ -1,20 +1,20 @@
 <script>
-  import Button from "$lib/components/Button.svelte"
-  import Icons from "$lib/components/Icons.svelte"
-  import { cn } from "$lib/utils/utils"
+  import Button from "$lib/components/Button.svelte";
+  import Icons from "$lib/components/Icons.svelte";
+  import { cn } from "$lib/utils/cn";
   import {
     closeWindow,
     initializeAppWindow,
     maximizeWindow,
-    minimizeWindow
-  } from "$lib/utils/window"
-  import { onMount } from "svelte"
+    minimizeWindow,
+  } from "$lib/utils/window";
+  import { onMount } from "svelte";
 
-  const isWindowMaximized = 0
+  const isWindowMaximized = 0;
 
   onMount(async () => {
-    await initializeAppWindow()
-  })
+    await initializeAppWindow();
+  });
 </script>
 
 <div {...$$props} class={cn("h-8 select-none", $$props.class)}>

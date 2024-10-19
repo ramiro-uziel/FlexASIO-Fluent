@@ -179,6 +179,8 @@ fn get_windows_version() -> (u32, u32, u32) {
 }
 
 fn main() {
+    std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
+
     tauri::Builder::default()
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_clipboard_manager::init())

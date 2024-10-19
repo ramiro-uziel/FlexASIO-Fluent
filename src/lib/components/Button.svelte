@@ -1,5 +1,5 @@
 <script>
-  import { cn } from "$lib/utils/utils"
+  import { cn } from "$lib/utils/cn";
 </script>
 
 <button
