@@ -9,7 +9,7 @@ GUI for [FlexASIO](https://github.com/dechamps/FlexASIO) TOML configuration file
 [Releases page](https://github.com/ramiro-uziel/FlexASIO-Fluent/releases/)
 
 ### Compatibility
-This overwrites the registry entry made by FlexASIO GUI on install. This means that if you open a DAW or any other software that can call to open a configuration GUI, it will open this one. If you want to revert to FlexASIO GUI, uninstall this first. 
+This overwrites the registry entry made by FlexASIO GUI on install. This means that if you open a DAW or any other software that can call to open a configuration GUI, it will open this one. If you want to revert to FlexASIO GUI, uninstall this first, then reinstall FlexASIO GUI.
 
 ### About
 I have been using FlexASIO for my music production needs, configuring it with [flipswitchingmonkey's editor](https://github.com/flipswitchingmonkey/FlexASIO_GUI). I wanted to add additional features and implement a modern user interface, including dark mode support. My main goal was to create an editor that would look and feel like a native Windows 11 application while maintaining the usability of the original FlexASIO GUI.
