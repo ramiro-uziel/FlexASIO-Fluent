@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { invoke } from "@tauri-apps/api/core";
   import { onMount } from "svelte";
   import { get } from "svelte/store";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
@@ -241,22 +240,9 @@
     await loadAndSetConfig();
   }
 
-  async function getAccentColor() {
-    try {
-      const color = adjustBrightness(
-        await invoke<string>("get_accent_color"),
-        70
-      );
-      accentColor.update(() => color);
-    } catch (error) {
-      console.error("Error getting accent color:", error);
-    }
-  }
-
   onMount(async () => {
     let currentWindow = getCurrentWebviewWindow();
     await loadAndSetConfig();
-    await getAccentColor();
     setTimeout(async () => {
       await currentWindow.show();
       document.body.style.backgroundColor = "transparent";

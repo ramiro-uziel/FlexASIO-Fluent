@@ -81,11 +81,11 @@
 </script>
 
 <div class="flex flex-col self-center w-full">
-  <TextBlock variant="title">Output</TextBlock>
+  <TextBlock data-tauri-drag-region variant="title">Output</TextBlock>
 </div>
 <div
   in:fly={{ delay: 100, x: 0, y: 10, duration: 150, easing: cubicOut }}
-  class="flex flex-col mt-0 mb-0 select-none items-center overflow-scroll gap-2.5 py-2"
+  class="flex flex-col mt-0 mb-0 select-none items-center overflow-y-scroll overflow-x-hidden gap-2.5 py-2"
   style="height: calc(100vh - 89px);"
 >
   <div class="text-box-container" data-enable-context-menu>
@@ -93,6 +93,7 @@
       bind:value={$tomlContent}
       on:input={(e) => handleTextareaChange(e)}
       on:contextmenu={showContextMenu}
+      spellcheck="false"
     ></textarea>
     <div class="text-box-underline" />
     <slot />

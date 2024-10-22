@@ -1,8 +1,12 @@
 <script lang="ts">
+  import { invoke } from "@tauri-apps/api/core";
   import { onMount, onDestroy } from "svelte";
-  import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
-  import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
-  import { ready } from "$lib/stores";
+  import {
+    WebviewWindow,
+    getCurrentWebviewWindow,
+  } from "@tauri-apps/api/webviewWindow";
+  import { ready, accentColor } from "$lib/stores";
+  import { adjustBrightness } from "$lib/utils/system";
   import "../app.css";
 
   let unlisten: (() => void) | undefined;
@@ -22,6 +26,31 @@
 
   function updateDarkMode(theme: string): void {
     document.documentElement.classList.toggle("dark", theme === "dark");
+  }
+
+  function setBackgroundColor(color: string): void {
+    const darkAccentColor = adjustBrightness(color, -87, -10); // Darken the accent color
+    document.documentElement.style.setProperty(
+      "--body-bg-color",
+      darkAccentColor
+    );
+    document.body.style.backgroundColor = "var(--body-bg-color)";
+  }
+
+  function setTransparentBackground(): void {
+    document.body.style.backgroundColor = "transparent";
+  }
+
+  async function getAccentColor() {
+    try {
+      const color = adjustBrightness(
+        await invoke<string>("get_accent_color"),
+        70
+      );
+      accentColor.update(() => color);
+    } catch (error) {
+      console.error("Error getting accent color:", error);
+    }
   }
 
   const isTauriLocalhost = (): boolean =>
@@ -71,12 +100,17 @@
   };
 
   onMount(async () => {
+    await getAccentColor();
     try {
+      accentColor.subscribe((color) => {
+        if (color) {
+          setBackgroundColor(color);
+        }
+      });
+
       setPreferedTheme();
       await new Promise((r) => setTimeout(r, 300));
-
       await initWindow();
-
       let currentWindow = getCurrentWebviewWindow();
       currentWindow.setTheme("dark");
       let theme = await currentWindow.theme();
@@ -85,8 +119,17 @@
         updateDarkMode(theme);
       });
 
+      // Set the background color based on the accent color
+
       setupEventListeners();
       ready.set(true);
+
+      // Set background to transparent after ready is set to true
+      ready.subscribe((isReady) => {
+        if (isReady) {
+          setTransparentBackground();
+        }
+      });
     } catch (error) {
       console.error("Error during onMount:", error);
     }

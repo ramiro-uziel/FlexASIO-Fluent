@@ -63,6 +63,9 @@
   let inputSetModesEnabled: boolean;
   let outputSetModesEnabled: boolean;
 
+  let inputChannelsEnabled = true;
+  let outputChannelsEnabled = true;
+
   $: if (outputHeight && inputContent && isWidescreen) {
     outputHeight += 15;
     inputContent.style.height = `${outputHeight}px`;
@@ -81,6 +84,18 @@
   $: if (outputSetModesEnabled) {
     outputAutoconvert = false;
     outputExclusive = false;
+  }
+
+  $: inputChannelsEnabled = inputChannels <= 0;
+
+  $: if (inputChannels == 0) {
+    inputSetChannels = false;
+  }
+
+  $: outputChannelsEnabled = outputChannels <= 0;
+
+  $: if (outputChannels == 0) {
+    outputSetChannels = false;
   }
 
   function keypressBlur(event: KeyboardEvent) {
@@ -135,7 +150,7 @@
 </script>
 
 <div class="flex flex-col self-center w-full">
-  <TextBlock variant="title">Devices</TextBlock>
+  <TextBlock data-tauri-drag-region variant="title">Devices</TextBlock>
 </div>
 
 <div
@@ -343,6 +358,7 @@
                   --fds-accent-secondary={$accentColor}
                   --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
                   bind:checked={inputSetChannels}
+                  bind:disabled={inputChannelsEnabled}
                 ></Checkbox>
                 <NumberBox
                   placeholder="0"
@@ -498,6 +514,7 @@
                   --fds-accent-secondary={$accentColor}
                   --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
                   bind:checked={outputSetChannels}
+                  bind:disabled={outputChannelsEnabled}
                 ></Checkbox>
                 <NumberBox
                   placeholder="0"

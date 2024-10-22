@@ -4,16 +4,17 @@
 
 @layer base {
   body {
-    @apply bg-white transition-colors duration-100;
+    @apply transition-colors duration-100;
+    background-color: white;
   }
-
   @media (prefers-color-scheme: dark) {
     body {
-      @apply bg-black transition-colors duration-100;
+      @apply transition-colors duration-100;
+      /* background-color: var(--body-bg-color, black); */
+      background-color: black;
     }
   }
 }
-
 /* width */
 ::-webkit-scrollbar {
   width: 5px;

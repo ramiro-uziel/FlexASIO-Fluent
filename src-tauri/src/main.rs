@@ -182,7 +182,6 @@ fn main() {
     let mut flags = StateFlags::all();
     flags.remove(StateFlags::VISIBLE);
 
-    std::env::set_var("WEBVIEW2_DEFAULT_BACKGROUND_COLOR", "FF000000");
     tauri::Builder::default()
         .setup(|app| {
             let main_window = app.get_webview_window("main").unwrap();

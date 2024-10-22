@@ -1,19 +1,33 @@
-export function adjustBrightness(color: string, percent: number) {
-  let R = parseInt(color.substring(1, 3), 16);
-  let G = parseInt(color.substring(3, 5), 16);
-  let B = parseInt(color.substring(5, 7), 16);
+export function adjustBrightness(
+  color: string,
+  brightnessPercent: number,
+  contrastPercent?: number
+): string {
+  // Parse the color
+  const rgb = parseInt(color.slice(1), 16);
+  let r = (rgb >> 16) & 0xff;
+  let g = (rgb >> 8) & 0xff;
+  let b = rgb & 0xff;
 
-  R = parseInt(((R * (100 + percent)) / 100).toString());
-  G = parseInt(((G * (100 + percent)) / 100).toString());
-  B = parseInt(((B * (100 + percent)) / 100).toString());
+  // Adjust brightness
+  const brightnessMultiplier = 1 + brightnessPercent / 100;
+  r = Math.round(r * brightnessMultiplier);
+  g = Math.round(g * brightnessMultiplier);
+  b = Math.round(b * brightnessMultiplier);
 
-  R = R < 255 ? R : 255;
-  G = G < 255 ? G : 255;
-  B = B < 255 ? B : 255;
+  // Adjust contrast if provided
+  if (contrastPercent !== undefined) {
+    const contrastFactor = (100 + contrastPercent) / 100;
+    r = Math.round((r - 128) * contrastFactor + 128);
+    g = Math.round((g - 128) * contrastFactor + 128);
+    b = Math.round((b - 128) * contrastFactor + 128);
+  }
 
-  let RR = R.toString(16).length === 1 ? "0" + R.toString(16) : R.toString(16);
-  let GG = G.toString(16).length === 1 ? "0" + G.toString(16) : G.toString(16);
-  let BB = B.toString(16).length === 1 ? "0" + B.toString(16) : B.toString(16);
+  // Clamp values between 0 and 255
+  r = Math.max(0, Math.min(255, r));
+  g = Math.max(0, Math.min(255, g));
+  b = Math.max(0, Math.min(255, b));
 
-  return "#" + RR + GG + BB;
+  // Convert back to hex string
+  return `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
 }
