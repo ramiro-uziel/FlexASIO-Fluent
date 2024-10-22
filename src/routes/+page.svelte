@@ -152,7 +152,6 @@
   $: {
     if (loaded) {
       if (textEdited || listEdited) {
-        console.log("Text or list edited", textEdited, listEdited);
         variant = "accent";
       } else {
         variant = "standard";

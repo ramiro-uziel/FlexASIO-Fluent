@@ -30,7 +30,6 @@
   }
 
   export async function saveTomlFile() {
-    console.log("Saving TOML file...");
     try {
       await writeTextFile(tomlPath, $tomlContent);
     } catch (error) {
@@ -44,7 +43,6 @@
     const target = event.target as HTMLTextAreaElement;
     const newContent = target.value;
     textEdited = newContent !== originalContent;
-    console.log("Text edited:", textEdited);
   }
 
   async function showContextMenu(event: MouseEvent) {
