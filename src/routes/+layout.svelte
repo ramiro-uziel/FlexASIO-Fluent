@@ -16,25 +16,8 @@
     await window.show();
   }
 
-  function setPreferedTheme() {
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
-    const value = prefersDark ? "dark" : "light";
-    document.documentElement.setAttribute("data-theme", value);
-  }
-
   function updateDarkMode(theme: string): void {
     document.documentElement.classList.toggle("dark", theme === "dark");
-  }
-
-  function setBackgroundColor(color: string): void {
-    const darkAccentColor = adjustBrightness(color, -87, -10); // Darken the accent color
-    document.documentElement.style.setProperty(
-      "--body-bg-color",
-      darkAccentColor
-    );
-    document.body.style.backgroundColor = "var(--body-bg-color)";
   }
 
   function setTransparentBackground(): void {
@@ -98,41 +81,25 @@
       });
     }
   };
-
   onMount(async () => {
     await getAccentColor();
-    try {
-      accentColor.subscribe((color) => {
-        if (color) {
-          setBackgroundColor(color);
-        }
-      });
+    await new Promise((r) => setTimeout(r, 300));
+    await initWindow();
+    let currentWindow = getCurrentWebviewWindow();
+    let theme = await currentWindow.theme();
+    updateDarkMode(theme?.toString() || "dark");
+    unlisten = await currentWindow.onThemeChanged(({ payload: theme }) => {
+      updateDarkMode(theme);
+    });
 
-      setPreferedTheme();
-      await new Promise((r) => setTimeout(r, 300));
-      await initWindow();
-      let currentWindow = getCurrentWebviewWindow();
-      currentWindow.setTheme("dark");
-      let theme = await currentWindow.theme();
-      updateDarkMode(theme?.toString() || "dark");
-      unlisten = await currentWindow.onThemeChanged(({ payload: theme }) => {
-        updateDarkMode(theme);
-      });
+    setupEventListeners();
+    ready.set(true);
 
-      // Set the background color based on the accent color
-
-      setupEventListeners();
-      ready.set(true);
-
-      // Set background to transparent after ready is set to true
-      ready.subscribe((isReady) => {
-        if (isReady) {
-          setTransparentBackground();
-        }
-      });
-    } catch (error) {
-      console.error("Error during onMount:", error);
-    }
+    ready.subscribe((isReady) => {
+      if (isReady) {
+        setTransparentBackground();
+      }
+    });
   });
 
   onDestroy(() => {

@@ -13,10 +13,6 @@
   import Copy from "@fluentui/svg-icons/icons/copy_20_regular.svg?component";
   import Pen from "@fluentui/svg-icons/icons/edit_20_regular.svg?component";
 
-  // import Flask from "$lib/icons/flask-solid.svg?component";
-  // import { dev } from "$app/environment";
-  // import WindowTitlebar from "$lib/WindowTitlebar.svelte";
-
   let selectedBackend: string;
   let selectedBuffer: string | number;
   let editDevices = true;
@@ -252,26 +248,6 @@
 
 {#if loaded}
   <div class="overflow-hidden w-full pt-1">
-    <!-- <WindowTitlebar class="h-10 overflow-hidden">
-      <div class="pointer-events-none w-full">
-        <div class="flex flex-row items-center align-middle p-2 gap-2 ml-1">
-          <img
-            src="favicon.png"
-            alt="FlexASIO Fluent Icon"
-            class="size-[15px]"
-          />
-          <span class="text-[12px]">FlexASIO Fluent</span>
-        </div>
-      </div>
-      {#if dev}
-        <div
-          class="pointer-events-none flex flex-row items-center justify-end gap-2 w-full -mt-2 mr-2"
-        >
-          <span class="text-[12px]">Dev</span>
-          <Flask class="size-2.5" />
-        </div>
-      {/if}
-    </WindowTitlebar> -->
     <div class="flex flex-row w-full justify-center">
       <div class="flex flex-row w-full max-w-[1000px] min-w-[300px]">
         {#if editDevices}

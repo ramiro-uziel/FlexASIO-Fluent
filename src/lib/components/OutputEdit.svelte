@@ -7,13 +7,7 @@
   import { TextBlock } from "fluent-svelte";
   import { fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
-  import {
-    Menu,
-    MenuItem,
-    IconMenuItem,
-    NativeIcon,
-    PredefinedMenuItem,
-  } from "@tauri-apps/api/menu";
+  import { Menu, PredefinedMenuItem } from "@tauri-apps/api/menu";
 
   const tomlContent: Writable<string> = writable("");
   let tomlPath: string;
