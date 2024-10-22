@@ -1,5 +1,39 @@
 {
   "identifier": "desktop-capability",
-  "platforms": ["macOS", "windows", "linux"],
-  "permissions": ["window-state:default", "window-state:allow-restore-state"]
+  "description": "Combined permissions from migrated and desktop capabilities",
+  "local": true,
+  "windows": ["main"],
+  "platforms": ["windows"],
+  "permissions": [
+    "core:path:default",
+    "fs:default",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        {
+          "path": "$HOME/*"
+        }
+      ]
+    },
+    "fs:allow-write-text-file",
+    "core:event:default",
+    "core:window:default",
+    "core:window:allow-close",
+    "core:window:allow-minimize",
+    "core:window:allow-maximize",
+    "core:window:allow-start-dragging",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-show",
+    "core:app:default",
+    "core:image:default",
+    "core:resources:default",
+    "core:menu:default",
+    "core:tray:default",
+    "shell:default",
+    "os:default",
+    "clipboard-manager:default",
+    "clipboard-manager:allow-write-text",
+    "window-state:default",
+    "window-state:allow-restore-state"
+  ]
 }

@@ -7,7 +7,7 @@
 </script>
 
 <div class="text-box-container {className}">
-  <textarea bind:value></textarea>
+  <textarea spellcheck="false" bind:value></textarea>
   <div class="text-box-underline" />
   <slot />
 </div>

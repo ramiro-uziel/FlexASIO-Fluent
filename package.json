@@ -19,7 +19,8 @@
     "@tauri-apps/plugin-fs": "^2.0.0-beta.7",
     "@tauri-apps/plugin-os": "2.0.0-beta.7",
     "@tauri-apps/plugin-window-state": "^2.0.0",
-    "flexasiofluent": "file:"
+    "flexasiofluent": "file:",
+    "tauri-plugin-window-state-api": "github:tauri-apps/tauri-plugin-window-state#v1"
   },
   "devDependencies": {
     "@poppanator/sveltekit-svg": "^4.2.1",

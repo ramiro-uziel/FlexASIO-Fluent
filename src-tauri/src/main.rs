@@ -11,11 +11,11 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fs;
 use tauri::command;
 use tauri::Manager;
-use tauri::WindowEvent;
-use window_vibrancy::apply_mica;
 use windows::Win32::Foundation::BOOL;
 use windows::Win32::Graphics::Dwm::DwmGetColorizationColor;
 use windows_version::OsVersion;
+
+use tauri_plugin_window_state::StateFlags;
 
 #[allow(non_snake_case)]
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -179,8 +179,20 @@ fn get_windows_version() -> (u32, u32, u32) {
 }
 
 fn main() {
+    let mut flags = StateFlags::all();
+    flags.remove(StateFlags::VISIBLE);
+
     tauri::Builder::default()
-        .plugin(tauri_plugin_window_state::Builder::new().build())
+        .setup(|app| {
+            let main_window = app.get_webview_window("main").unwrap();
+            main_window.set_decorations(true).unwrap();
+            Ok(())
+        })
+        .plugin(
+            tauri_plugin_window_state::Builder::default()
+                .with_state_flags(flags)
+                .build(),
+        )
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_os::init())
@@ -191,26 +203,6 @@ fn main() {
             get_accent_color,
             get_windows_version
         ])
-        .setup(|app: &mut tauri::App| {
-            let window = app.get_webview_window("main").unwrap();
-
-            #[cfg(target_os = "windows")]
-            {
-                let version: OsVersion = OsVersion::current();
-
-                if version.major > 10 || (version.major == 10 && version.build >= 22000) {
-                    apply_mica(&window, None).expect("Failed to apply mica effect");
-                }
-                window.on_window_event(|event| match event {
-                    WindowEvent::Resized(..) => {
-                        std::thread::sleep(std::time::Duration::from_millis(1))
-                    }
-                    _ => {}
-                });
-            }
-
-            Ok(())
-        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

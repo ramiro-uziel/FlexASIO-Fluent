@@ -3,7 +3,7 @@
   import { fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { browser } from "$app/environment";
-  import { adjustBrightness } from "$lib/utils/utils";
+  import { adjustBrightness } from "$lib/utils/system";
   import { accentColor, inputDevices, outputDevices } from "$lib/stores";
   import {
     Button,
@@ -63,6 +63,9 @@
   let inputSetModesEnabled: boolean;
   let outputSetModesEnabled: boolean;
 
+  let inputChannelsEnabled = true;
+  let outputChannelsEnabled = true;
+
   $: if (outputHeight && inputContent && isWidescreen) {
     outputHeight += 15;
     inputContent.style.height = `${outputHeight}px`;
@@ -81,6 +84,18 @@
   $: if (outputSetModesEnabled) {
     outputAutoconvert = false;
     outputExclusive = false;
+  }
+
+  $: inputChannelsEnabled = inputChannels <= 0;
+
+  $: if (inputChannels == 0) {
+    inputSetChannels = false;
+  }
+
+  $: outputChannelsEnabled = outputChannels <= 0;
+
+  $: if (outputChannels == 0) {
+    outputSetChannels = false;
   }
 
   function keypressBlur(event: KeyboardEvent) {
@@ -135,7 +150,7 @@
 </script>
 
 <div class="flex flex-col self-center w-full">
-  <TextBlock variant="title">Devices</TextBlock>
+  <TextBlock data-tauri-drag-region variant="title">Devices</TextBlock>
 </div>
 
 <div
@@ -147,7 +162,7 @@
     easing: cubicOut,
   }}
   class="flex flex-col mt-0 mb-0 select-none items-center overflow-scroll"
-  style="height: calc(100vh - 125px);"
+  style="height: calc(100vh - 89px);"
 >
   <div
     class="flex flex-col gap-3 self-center w-full max-w-[1000px] min-w-[300px] rounded-lg"
@@ -234,8 +249,8 @@
                   bind:this={inputContent}
                   style={isWidescreen
                     ? selectedBackend === "WASAPI"
-                      ? "max-height: calc(100vh - 440px);"
-                      : "max-height: calc(100vh - 386px);"
+                      ? "max-height: calc(100vh - 404px);"
+                      : "max-height: calc(100vh - 350px);"
                     : ""}
                 >
                   {#each $inputDevices as { label, device, value }}
@@ -343,6 +358,7 @@
                   --fds-accent-secondary={$accentColor}
                   --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
                   bind:checked={inputSetChannels}
+                  bind:disabled={inputChannelsEnabled}
                 ></Checkbox>
                 <NumberBox
                   placeholder="0"
@@ -389,8 +405,8 @@
                   class="flex flex-col w-full gap-2 overflow-scroll"
                   style={isWidescreen
                     ? selectedBackend === "WASAPI"
-                      ? "max-height: calc(100vh - 440px);"
-                      : "max-height: calc(100vh - 386px);"
+                      ? "max-height: calc(100vh - 404px);"
+                      : "max-height: calc(100vh - 350px);"
                     : ""}
                   bind:clientHeight={outputHeight}
                 >
@@ -498,6 +514,7 @@
                   --fds-accent-secondary={$accentColor}
                   --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
                   bind:checked={outputSetChannels}
+                  bind:disabled={outputChannelsEnabled}
                 ></Checkbox>
                 <NumberBox
                   placeholder="0"

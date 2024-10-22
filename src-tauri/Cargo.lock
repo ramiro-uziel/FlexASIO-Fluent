@@ -19,7 +19,6 @@ dependencies = [
  "tauri-plugin-shell",
  "tauri-plugin-window-state",
  "toml 0.8.16",
- "window-vibrancy",
  "windows",
  "windows-version",
 ]

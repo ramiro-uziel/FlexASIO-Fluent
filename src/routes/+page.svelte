@@ -1,22 +1,17 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { get } from "svelte/store";
-  import { dev } from "$app/environment";
+  import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { Button, Tooltip } from "fluent-svelte";
-  import WindowTitlebar from "$lib/WindowTitlebar.svelte";
   import OutputEdit from "$lib/components/OutputEdit.svelte";
   import DeviceEdit from "$lib/components/DeviceEdit.svelte";
   import { inputDevices, outputDevices, ready, accentColor } from "$lib/stores";
-  import { adjustBrightness } from "$lib/utils/utils";
-  import { loadConfig, saveConfig, copyConfig } from "$lib/utils/config";
-  import { getDevices, labelDevices } from "$lib/utils/device";
-  import { checkMica, getAccentColor } from "$lib/utils/system";
-  import { compareConfigs } from "$lib/utils/compare";
+  import { adjustBrightness } from "$lib/utils/system";
+  import { AudioManager } from "$lib/AudioManager";
   import type { Config } from "$lib/types";
   import Checkmark from "@fluentui/svg-icons/icons/checkmark_20_regular.svg?component";
   import Copy from "@fluentui/svg-icons/icons/copy_20_regular.svg?component";
   import Pen from "@fluentui/svg-icons/icons/edit_20_regular.svg?component";
-  import Flask from "$lib/icons/flask-solid.svg?component";
 
   let selectedBackend: string;
   let selectedBuffer: string | number;
@@ -91,7 +86,6 @@
     toggleName = editDevices ? "Edit Output" : "Edit Devices";
     await loadAndSetConfig();
   }
-
   function updateListEdited() {
     if (!originalConfig) return;
 
@@ -130,7 +124,7 @@
       },
     };
 
-    listEdited = !compareConfigs(currentConfig, originalConfig);
+    listEdited = !AudioManager.compareConfigs(currentConfig, originalConfig);
   }
 
   $: if (originalConfig && selectedBackend) {
@@ -158,7 +152,6 @@
   $: {
     if (loaded) {
       if (textEdited || listEdited) {
-        console.log("Text or list edited", textEdited, listEdited);
         variant = "accent";
       } else {
         variant = "standard";
@@ -167,7 +160,7 @@
   }
 
   async function loadAndSetConfig() {
-    const config = await loadConfig();
+    const config = await AudioManager.loadConfig();
     originalConfig = JSON.parse(JSON.stringify(config));
 
     selectedBackend = backendMapping[config.backend];
@@ -176,8 +169,8 @@
         ? "Default"
         : config.bufferSizeSamples.toString();
 
-    await getDevices(selectedBackend);
-    await labelDevices(selectedBackend);
+    await AudioManager.getDevices(selectedBackend);
+    await AudioManager.labelDevices(selectedBackend);
 
     const inputDevicesValue = get(inputDevices);
     const outputDevicesValue = get(outputDevices);
@@ -218,16 +211,16 @@
   }
 
   async function updateDevicesList() {
-    await getDevices(selectedBackend);
-    await labelDevices(selectedBackend);
+    await AudioManager.getDevices(selectedBackend);
+    await AudioManager.labelDevices(selectedBackend);
     selectedInput = -1;
     selectedOutput = -1;
     updateListEdited();
   }
 
   async function refreshDevices() {
-    await getDevices(selectedBackend);
-    await labelDevices(selectedBackend);
+    await AudioManager.getDevices(selectedBackend);
+    await AudioManager.labelDevices(selectedBackend);
     updateListEdited();
   }
 
@@ -235,7 +228,7 @@
     if (!editDevices) {
       outputEdit.saveTomlFile();
     } else {
-      await saveConfig(currentConfig);
+      await AudioManager.saveConfig(currentConfig);
     }
     listEdited = false;
     textEdited = false;
@@ -243,34 +236,17 @@
   }
 
   onMount(async () => {
-    await checkMica();
+    let currentWindow = getCurrentWebviewWindow();
     await loadAndSetConfig();
-    await getAccentColor();
+    setTimeout(async () => {
+      await currentWindow.show();
+      document.body.style.backgroundColor = "transparent";
+    }, 0);
   });
 </script>
 
 {#if loaded}
-  <div class="overflow-hidden w-full">
-    <WindowTitlebar class="h-10 overflow-hidden">
-      <div class="pointer-events-none w-full">
-        <div class="flex flex-row items-center align-middle p-2 gap-2 ml-1">
-          <img
-            src="favicon.png"
-            alt="FlexASIO Fluent Icon"
-            class="size-[15px]"
-          />
-          <span class="text-[12px]">FlexASIO Fluent</span>
-        </div>
-      </div>
-      {#if dev}
-        <div
-          class="pointer-events-none flex flex-row items-center justify-end gap-2 w-full -mt-2 mr-2"
-        >
-          <span class="text-[12px]">Dev</span>
-          <Flask class="size-2.5" />
-        </div>
-      {/if}
-    </WindowTitlebar>
+  <div class="overflow-hidden w-full pt-1">
     <div class="flex flex-row w-full justify-center">
       <div class="flex flex-row w-full max-w-[1000px] min-w-[300px]">
         {#if editDevices}
@@ -336,7 +312,7 @@
           </div>
           <div class="flex gap-2.5">
             <Tooltip text="Copy the config">
-              <Button on:click={copyConfig}>
+              <Button on:click={AudioManager.copyConfig}>
                 <Copy /><span class="pl-1.5">Copy</span>
               </Button>
             </Tooltip>

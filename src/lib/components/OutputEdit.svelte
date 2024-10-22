@@ -7,13 +7,7 @@
   import { TextBlock } from "fluent-svelte";
   import { fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
-  import {
-    Menu,
-    MenuItem,
-    IconMenuItem,
-    NativeIcon,
-    PredefinedMenuItem,
-  } from "@tauri-apps/api/menu";
+  import { Menu, PredefinedMenuItem } from "@tauri-apps/api/menu";
 
   const tomlContent: Writable<string> = writable("");
   let tomlPath: string;
@@ -36,7 +30,6 @@
   }
 
   export async function saveTomlFile() {
-    console.log("Saving TOML file...");
     try {
       await writeTextFile(tomlPath, $tomlContent);
     } catch (error) {
@@ -50,7 +43,6 @@
     const target = event.target as HTMLTextAreaElement;
     const newContent = target.value;
     textEdited = newContent !== originalContent;
-    console.log("Text edited:", textEdited);
   }
 
   async function showContextMenu(event: MouseEvent) {
@@ -81,18 +73,19 @@
 </script>
 
 <div class="flex flex-col self-center w-full">
-  <TextBlock variant="title">Output</TextBlock>
+  <TextBlock data-tauri-drag-region variant="title">Output</TextBlock>
 </div>
 <div
   in:fly={{ delay: 100, x: 0, y: 10, duration: 150, easing: cubicOut }}
-  class="flex flex-col mt-0 mb-0 select-none items-center overflow-scroll gap-2.5 py-2"
-  style="height: calc(100vh - 120px);"
+  class="flex flex-col mt-0 mb-0 select-none items-center overflow-y-scroll overflow-x-hidden gap-2.5 py-2"
+  style="height: calc(100vh - 89px);"
 >
   <div class="text-box-container" data-enable-context-menu>
     <textarea
       bind:value={$tomlContent}
       on:input={(e) => handleTextareaChange(e)}
       on:contextmenu={showContextMenu}
+      spellcheck="false"
     ></textarea>
     <div class="text-box-underline" />
     <slot />

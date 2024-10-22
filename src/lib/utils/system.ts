@@ -1,28 +1,28 @@
-import { invoke } from "@tauri-apps/api/core";
-import { accentColor } from "$lib/stores";
-import { adjustBrightness } from "./utils";
+export function adjustBrightness(
+  color: string,
+  brightnessPercent: number,
+  contrastPercent?: number
+): string {
+  const rgb = parseInt(color.slice(1), 16);
+  let r = (rgb >> 16) & 0xff;
+  let g = (rgb >> 8) & 0xff;
+  let b = rgb & 0xff;
 
-export async function checkMica() {
-  try {
-    const [major, , build] = await invoke<[number, number, number]>(
-      "get_windows_version"
-    );
-    if (!(major > 10 || (major === 10 && build >= 22000))) {
-      document.body.classList.add("apply-background-color");
-    }
-  } catch (error) {
-    console.error(`Error fetching Windows version: ${error}`);
-  }
-}
+  const brightnessMultiplier = 1 + brightnessPercent / 100;
+  r = Math.round(r * brightnessMultiplier);
+  g = Math.round(g * brightnessMultiplier);
+  b = Math.round(b * brightnessMultiplier);
 
-export async function getAccentColor() {
-  try {
-    const color = adjustBrightness(
-      await invoke<string>("get_accent_color"),
-      70
-    );
-    accentColor.update(() => color);
-  } catch (error) {
-    console.error("Error getting accent color:", error);
+  if (contrastPercent !== undefined) {
+    const contrastFactor = (100 + contrastPercent) / 100;
+    r = Math.round((r - 128) * contrastFactor + 128);
+    g = Math.round((g - 128) * contrastFactor + 128);
+    b = Math.round((b - 128) * contrastFactor + 128);
   }
+
+  r = Math.max(0, Math.min(255, r));
+  g = Math.max(0, Math.min(255, g));
+  b = Math.max(0, Math.min(255, b));
+
+  return `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
 }

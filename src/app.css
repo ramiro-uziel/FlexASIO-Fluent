@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply transition-colors duration-100;
+    background-color: white;
+  }
+  @media (prefers-color-scheme: dark) {
+    body {
+      @apply transition-colors duration-100;
+      /* background-color: var(--body-bg-color, black); */
+      /* background-color: black; */
+      background-color: transparent;
+    }
+  }
+}
 /* width */
 ::-webkit-scrollbar {
   width: 5px;
