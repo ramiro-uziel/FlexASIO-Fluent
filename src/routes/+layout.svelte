@@ -10,10 +10,10 @@
   import "../app.css";
 
   let unlisten: (() => void) | undefined;
+  let currentWindow: WebviewWindow;
 
-  async function initWindow() {
-    const window = WebviewWindow.getCurrent();
-    await window.show();
+  function initWindow() {
+    currentWindow.show();
   }
 
   function updateDarkMode(theme: string): void {
@@ -81,11 +81,11 @@
       });
     }
   };
+
   onMount(async () => {
+    currentWindow = getCurrentWebviewWindow();
     await getAccentColor();
     await new Promise((r) => setTimeout(r, 300));
-    await initWindow();
-    let currentWindow = getCurrentWebviewWindow();
     let theme = await currentWindow.theme();
     updateDarkMode(theme?.toString() || "dark");
     unlisten = await currentWindow.onThemeChanged(({ payload: theme }) => {
@@ -97,7 +97,7 @@
 
     ready.subscribe((isReady) => {
       if (isReady) {
-        setTransparentBackground();
+        initWindow();
       }
     });
   });
