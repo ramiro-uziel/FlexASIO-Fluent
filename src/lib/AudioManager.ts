@@ -89,7 +89,7 @@ export class AudioManager {
 
   static async loadConfig(): Promise<Config> {
     try {
-      const tomlPath = await this.getTomlPath();
+      const tomlPath = await AudioManager.getTomlPath();
       if (!tomlPath) throw new Error("Could not get TOML path");
 
       let configContent: string;
@@ -112,7 +112,7 @@ export class AudioManager {
 
   static async saveConfig(config: Partial<Config>) {
     try {
-      const tomlPath = await this.getTomlPath();
+      const tomlPath = await AudioManager.getTomlPath();
       if (!tomlPath) throw new Error("Could not get TOML path");
       await invoke("save_config", { tomlPath, config });
     } catch (error) {
@@ -123,7 +123,7 @@ export class AudioManager {
 
   static async copyConfig() {
     try {
-      const tomlPath = await this.getTomlPath();
+      const tomlPath = await AudioManager.getTomlPath();
       if (!tomlPath) throw new Error("Could not get TOML path");
       const content = await readTextFile(tomlPath);
       await writeText(content);

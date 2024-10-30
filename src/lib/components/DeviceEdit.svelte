@@ -5,6 +5,7 @@
   import { browser } from "$app/environment";
   import { adjustBrightness } from "$lib/utils/system";
   import { accentColor, inputDevices, outputDevices } from "$lib/stores";
+
   import {
     Button,
     Checkbox,
@@ -15,11 +16,15 @@
     TextBlock,
     Tooltip,
   } from "fluent-svelte";
+
   import Speaker from "@fluentui/svg-icons/icons/speaker_2_20_regular.svg?component";
   import Microphone from "@fluentui/svg-icons/icons/mic_20_regular.svg?component";
   import Refresh from "@fluentui/svg-icons/icons/arrow_clockwise_20_regular.svg?component";
   import Info from "@fluentui/svg-icons/icons/info_20_filled.svg?component";
 
+  import type { AudioBackend } from "$lib/types";
+
+  // Input Props
   export let inputExpanded: boolean;
   export let inputSetModes: boolean;
   export let inputExclusive: boolean;
@@ -30,6 +35,7 @@
   export let inputSetChannels: boolean;
   export let inputChannels: number;
 
+  // Output Props
   export let outputExpanded: boolean;
   export let outputSetModes: boolean;
   export let outputExclusive: boolean;
@@ -40,31 +46,63 @@
   export let outputSetChannels: boolean;
   export let outputChannels: number;
 
+  // Backend Props
   export let selectedBackend: string;
   export let selectedBuffer: number | string;
-
-  export let Backend: {
-    name: string;
-    value: string;
-  }[];
-
+  export let AUDIO_BACKENDS;
   export let BufferSize: (
     | { name: string; value: string }
     | { name: string; value: number }
   )[];
 
+  // State
   const dispatch = createEventDispatcher();
-
   let outputHeight: number;
   let inputContent: HTMLDivElement;
   let originalInputHeight: string;
   let isWidescreen = false;
-
   let inputSetModesEnabled: boolean;
   let outputSetModesEnabled: boolean;
-
   let inputChannelsEnabled = true;
   let outputChannelsEnabled = true;
+
+  // Backend Options
+  const getBackendComboBoxOptions = () =>
+    Object.values(AUDIO_BACKENDS).map((b) => {
+      const backend = b as AudioBackend;
+      return {
+        // Hack for Fluent Svelte ComboBox having mismatched value and display text
+        name: backend.value,
+        value: backend.value,
+      };
+    });
+
+  const backendOptions = getBackendComboBoxOptions();
+
+  // Event Handlers
+  function handleBufferInput(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const inputValue = target.value;
+
+    if (inputValue === "Default") {
+      selectedBuffer = "Default";
+    } else {
+      const numValue = parseInt(inputValue, 10);
+      selectedBuffer = !isNaN(numValue) ? numValue.toString() : inputValue;
+    }
+  }
+
+  function checkScreenWidth() {
+    isWidescreen = window.innerWidth >= 685;
+  }
+
+  function updateDevices() {
+    dispatch("updateDevices");
+  }
+
+  function refreshDevices() {
+    dispatch("refreshDevices");
+  }
 
   $: if (outputHeight && inputContent && isWidescreen) {
     outputHeight += 15;
@@ -87,50 +125,13 @@
   }
 
   $: inputChannelsEnabled = inputChannels <= 0;
-
   $: if (inputChannels == 0) {
     inputSetChannels = false;
   }
 
   $: outputChannelsEnabled = outputChannels <= 0;
-
   $: if (outputChannels == 0) {
     outputSetChannels = false;
-  }
-
-  function keypressBlur(event: KeyboardEvent) {
-    if (event.key === "Enter") {
-      const target = event.target as HTMLInputElement;
-      target.blur();
-    }
-  }
-
-  function handleBufferInput(event: Event) {
-    const target = event.target as HTMLInputElement;
-    const inputValue = target.value;
-
-    if (inputValue === "Default") {
-      selectedBuffer = "Default";
-    } else {
-      const numValue = parseInt(inputValue, 10);
-      if (!isNaN(numValue)) {
-        selectedBuffer = numValue.toString();
-      } else {
-        selectedBuffer = inputValue;
-      }
-    }
-  }
-
-  function checkScreenWidth() {
-    isWidescreen = window.innerWidth >= 685;
-  }
-
-  function updateDevices() {
-    dispatch("updateDevices");
-  }
-
-  function refreshDevices() {
-    dispatch("refreshDevices");
   }
 
   onMount(() => {
@@ -174,7 +175,7 @@
       >
         <div class="flex gap-2.5 items-center">
           <ComboBox
-            items={Backend}
+            items={backendOptions}
             editable={true}
             bind:value={selectedBackend}
             searchValue={selectedBackend}
@@ -206,9 +207,6 @@
           {/if}
         </div>
         <div class="space-x-1">
-          <!-- <Button on:click={refreshDevices}
-            ><Reload /><span class="ml-2">Reload</span></Button
-          > -->
           <Button on:click={refreshDevices}
             ><Refresh /><span class="ml-2">Refresh</span></Button
           >

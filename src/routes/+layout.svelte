@@ -20,10 +20,6 @@
     document.documentElement.classList.toggle("dark", theme === "dark");
   }
 
-  function setTransparentBackground(): void {
-    document.body.style.backgroundColor = "transparent";
-  }
-
   async function getAccentColor() {
     try {
       const color = adjustBrightness(

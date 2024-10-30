@@ -19,3 +19,8 @@ export interface DeviceItem {
   device: string;
   value: number;
 }
+
+export interface AudioBackend {
+  value: string;
+  displayName: string;
+}

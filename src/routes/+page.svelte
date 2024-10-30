@@ -3,73 +3,26 @@
   import { get } from "svelte/store";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { Button, Tooltip } from "fluent-svelte";
-  import OutputEdit from "$lib/components/OutputEdit.svelte";
-  import DeviceEdit from "$lib/components/DeviceEdit.svelte";
-  import { inputDevices, outputDevices, ready, accentColor } from "$lib/stores";
   import { adjustBrightness } from "$lib/utils/system";
-  import { AudioManager } from "$lib/AudioManager";
-  import type { Config } from "$lib/types";
   import Checkmark from "@fluentui/svg-icons/icons/checkmark_20_regular.svg?component";
   import Copy from "@fluentui/svg-icons/icons/copy_20_regular.svg?component";
   import Pen from "@fluentui/svg-icons/icons/edit_20_regular.svg?component";
 
-  let selectedBackend: string;
-  let selectedBuffer: string | number;
-  let editDevices = true;
-  let inputExpanded = true;
-  let selectedInput = -1;
-  let inputSetModes = false;
-  let inputExclusive = false;
-  let inputAutoconvert = false;
-  let inputSetLatency = false;
-  let inputLatency = 0;
-  let inputSetChannels = false;
-  let inputChannels = 0;
-  let outputExpanded = true;
-  let selectedOutput = -1;
-  let outputSetModes = false;
-  let outputExclusive = false;
-  let outputAutoconvert = false;
-  let outputSetLatency = false;
-  let outputLatency = 0;
-  let outputSetChannels = false;
-  let outputChannels = 0;
-  let toggleName = "Edit Output";
+  import OutputEdit from "$lib/components/OutputEdit.svelte";
+  import DeviceEdit from "$lib/components/DeviceEdit.svelte";
 
-  let outputEdit: OutputEdit;
+  import { inputDevices, outputDevices, accentColor } from "$lib/stores";
+  import { AudioManager } from "$lib/AudioManager";
+  import type { AudioBackend, Config } from "$lib/types";
 
-  let textEdited: boolean = false;
-  let listEdited: boolean = false;
+  const AUDIO_BACKENDS: { [key: string]: AudioBackend } = {
+    MME: { value: "MME", displayName: "MME" },
+    DirectSound: { value: "DirectSound", displayName: "Windows DirectSound" },
+    WASAPI: { value: "WASAPI", displayName: "Windows WASAPI" },
+    "WDM-KS": { value: "WDM-KS", displayName: "Windows WDM-KS" },
+  } as const;
 
-  let originalConfig: Config | null = null;
-  let currentConfig: Partial<Config> = {};
-
-  let variant: "accent" | "standard" | "hyperlink" | undefined = "standard";
-
-  let loaded = false;
-
-  const Backend = [
-    { name: "MME", value: "MME" },
-    { name: "DirectSound", value: "DirectSound" },
-    { name: "WASAPI", value: "WASAPI" },
-    { name: "WDM-KS", value: "WDM-KS" },
-  ];
-
-  const backendMapping: Record<string, string> = {
-    MME: "MME",
-    "Windows DirectSound": "DirectSound",
-    "Windows WASAPI": "WASAPI",
-    "Windows WDM-KS": "WDM-KS",
-  };
-
-  const backendOkay: Record<string, string> = {
-    MME: "MME",
-    DirectSound: "Windows DirectSound",
-    WASAPI: "Windows WASAPI",
-    "WDM-KS": "Windows WDM-KS",
-  };
-
-  const BufferSize = [
+  const BUFFER_SIZES = [
     { name: "Default", value: "Default" },
     { name: "0", value: "0" },
     { name: "16", value: "16" },
@@ -81,11 +34,79 @@
     { name: "1024", value: "1024" },
   ];
 
+  // State Management
+  let outputEdit: OutputEdit;
+  let loaded = false;
+  let textEdited = false;
+  let listEdited = false;
+  let variant: "accent" | "standard" | "hyperlink" | undefined = "standard";
+
+  // Config State
+  let originalConfig: Config | null = null;
+  let currentConfig: Partial<Config> = {};
+
+  // UI State
+  let editDevices = true;
+  let toggleName = "Edit Output";
+
+  // Device Settings State
+  let selectedBackend: string;
+  let selectedBuffer: string | number;
+
+  // Input Settings
+  let inputExpanded = true;
+  let selectedInput = -1;
+  let inputSetModes = false;
+  let inputExclusive = false;
+  let inputAutoconvert = false;
+  let inputSetLatency = false;
+  let inputLatency = 0;
+  let inputSetChannels = false;
+  let inputChannels = 0;
+
+  // Output Settings
+  let outputExpanded = true;
+  let selectedOutput = -1;
+  let outputSetModes = false;
+  let outputExclusive = false;
+  let outputAutoconvert = false;
+  let outputSetLatency = false;
+  let outputLatency = 0;
+  let outputSetChannels = false;
+  let outputChannels = 0;
+
+  // Utility Functions
+  const getInternalBackendValue = (displayName: string) => {
+    const backend = Object.values(AUDIO_BACKENDS).find(
+      (b) => b.displayName === displayName
+    );
+    return backend?.value ?? displayName;
+  };
+
+  const getBackendDisplayName = (value: string) => {
+    const backend = AUDIO_BACKENDS[value as keyof typeof AUDIO_BACKENDS];
+    return backend?.displayName ?? value;
+  };
+
+  // Event Handlers
   async function toggleDevices() {
     editDevices = !editDevices;
     toggleName = editDevices ? "Edit Output" : "Edit Devices";
     await loadAndSetConfig();
   }
+
+  async function handleApply() {
+    if (!editDevices) {
+      outputEdit.saveTomlFile();
+    } else {
+      await AudioManager.saveConfig(currentConfig);
+    }
+    listEdited = false;
+    textEdited = false;
+    await loadAndSetConfig();
+  }
+
+  // Config Management
   function updateListEdited() {
     if (!originalConfig) return;
 
@@ -99,7 +120,7 @@
         : "";
 
     currentConfig = {
-      backend: selectedBackend ? backendOkay[selectedBackend] : undefined,
+      backend: getBackendDisplayName(selectedBackend),
       bufferSizeSamples:
         selectedBuffer === "Default"
           ? null
@@ -127,6 +148,77 @@
     listEdited = !AudioManager.compareConfigs(currentConfig, originalConfig);
   }
 
+  async function loadAndSetConfig() {
+    const config = await AudioManager.loadConfig();
+    originalConfig = JSON.parse(JSON.stringify(config));
+
+    selectedBackend = getInternalBackendValue(config.backend);
+    selectedBuffer =
+      config.bufferSizeSamples === null
+        ? "Default"
+        : config.bufferSizeSamples.toString();
+
+    await AudioManager.getDevices(selectedBackend);
+    await AudioManager.labelDevices(selectedBackend);
+
+    const inputDevicesValue = get(inputDevices);
+    const outputDevicesValue = get(outputDevices);
+
+    // Set device selections
+    selectedInput =
+      inputDevicesValue.findIndex((d) => d.name === config.input.device) - 1;
+    selectedOutput =
+      outputDevicesValue.findIndex((d) => d.name === config.output.device) - 1;
+
+    if (selectedInput === -2) selectedInput = -1;
+    if (selectedOutput === -2) selectedOutput = -1;
+
+    // Set latency values
+    inputSetLatency = config.input.suggestedLatencySeconds !== null;
+    inputLatency = config.input.suggestedLatencySeconds || 0;
+    outputSetLatency = config.output.suggestedLatencySeconds !== null;
+    outputLatency = config.output.suggestedLatencySeconds || 0;
+
+    // Set channel values
+    inputSetChannels = config.input.channels !== null;
+    inputChannels = config.input.channels || 0;
+    outputSetChannels = config.output.channels !== null;
+    outputChannels = config.output.channels || 0;
+
+    // Handle WASAPI-specific settings
+    if (selectedBackend === "WASAPI") {
+      inputSetModes =
+        config.input.wasapiExclusiveMode !== null ||
+        config.input.wasapiAutoConvert !== null;
+      inputExclusive = config.input.wasapiExclusiveMode || false;
+      inputAutoconvert = config.input.wasapiAutoConvert || false;
+
+      outputSetModes =
+        config.output.wasapiExclusiveMode !== null ||
+        config.output.wasapiAutoConvert !== null;
+      outputExclusive = config.output.wasapiExclusiveMode || false;
+      outputAutoconvert = config.output.wasapiAutoConvert || false;
+    }
+
+    updateListEdited();
+    loaded = true;
+  }
+
+  // Device Management
+  async function updateDevicesList() {
+    await AudioManager.getDevices(selectedBackend);
+    await AudioManager.labelDevices(selectedBackend);
+    selectedInput = -1;
+    selectedOutput = -1;
+    updateListEdited();
+  }
+
+  async function refreshDevices() {
+    await AudioManager.getDevices(selectedBackend);
+    await AudioManager.labelDevices(selectedBackend);
+    updateListEdited();
+  }
+
   $: if (originalConfig && selectedBackend) {
     selectedBackend,
       selectedBuffer,
@@ -151,88 +243,8 @@
 
   $: {
     if (loaded) {
-      if (textEdited || listEdited) {
-        variant = "accent";
-      } else {
-        variant = "standard";
-      }
+      variant = textEdited || listEdited ? "accent" : "standard";
     }
-  }
-
-  async function loadAndSetConfig() {
-    const config = await AudioManager.loadConfig();
-    originalConfig = JSON.parse(JSON.stringify(config));
-
-    selectedBackend = backendMapping[config.backend];
-    selectedBuffer =
-      config.bufferSizeSamples === null
-        ? "Default"
-        : config.bufferSizeSamples.toString();
-
-    await AudioManager.getDevices(selectedBackend);
-    await AudioManager.labelDevices(selectedBackend);
-
-    const inputDevicesValue = get(inputDevices);
-    const outputDevicesValue = get(outputDevices);
-
-    selectedInput =
-      inputDevicesValue.findIndex((d) => d.name === config.input.device) - 1;
-    selectedOutput =
-      outputDevicesValue.findIndex((d) => d.name === config.output.device) - 1;
-
-    if (selectedInput === -2) selectedInput = -1;
-    if (selectedOutput === -2) selectedOutput = -1;
-
-    inputSetLatency = config.input.suggestedLatencySeconds !== null;
-    inputLatency = config.input.suggestedLatencySeconds || 0;
-    outputSetLatency = config.output.suggestedLatencySeconds !== null;
-    outputLatency = config.output.suggestedLatencySeconds || 0;
-
-    inputSetChannels = config.input.channels !== null;
-    inputChannels = config.input.channels || 0;
-    outputSetChannels = config.output.channels !== null;
-    outputChannels = config.output.channels || 0;
-
-    if (selectedBackend === "WASAPI") {
-      inputSetModes =
-        config.input.wasapiExclusiveMode !== null ||
-        config.input.wasapiAutoConvert !== null;
-      inputExclusive = config.input.wasapiExclusiveMode || false;
-      inputAutoconvert = config.input.wasapiAutoConvert || false;
-
-      outputSetModes =
-        config.output.wasapiExclusiveMode !== null ||
-        config.output.wasapiAutoConvert !== null;
-      outputExclusive = config.output.wasapiExclusiveMode || false;
-      outputAutoconvert = config.output.wasapiAutoConvert || false;
-    }
-    updateListEdited();
-    loaded = true;
-  }
-
-  async function updateDevicesList() {
-    await AudioManager.getDevices(selectedBackend);
-    await AudioManager.labelDevices(selectedBackend);
-    selectedInput = -1;
-    selectedOutput = -1;
-    updateListEdited();
-  }
-
-  async function refreshDevices() {
-    await AudioManager.getDevices(selectedBackend);
-    await AudioManager.labelDevices(selectedBackend);
-    updateListEdited();
-  }
-
-  async function handleApply() {
-    if (!editDevices) {
-      outputEdit.saveTomlFile();
-    } else {
-      await AudioManager.saveConfig(currentConfig);
-    }
-    listEdited = false;
-    textEdited = false;
-    await loadAndSetConfig();
   }
 
   onMount(async () => {
@@ -240,13 +252,13 @@
     await loadAndSetConfig();
     setTimeout(async () => {
       await currentWindow.show();
-      document.body.style.backgroundColor = "transparent";
     }, 0);
   });
 </script>
 
 {#if loaded}
-  <div class="overflow-hidden w-full pt-1">
+  <div class="overflow-hidden w-full">
+    <div data-tauri-drag-region class="w-full h-1"></div>
     <div class="flex flex-row w-full justify-center">
       <div class="flex flex-row w-full max-w-[1000px] min-w-[300px]">
         {#if editDevices}
@@ -254,8 +266,8 @@
             <div class="flex flex-col gap-3 self-center w-full rounded-lg">
               <div class="flex flex-col gap-2">
                 <DeviceEdit
-                  {Backend}
-                  {BufferSize}
+                  {AUDIO_BACKENDS}
+                  BufferSize={BUFFER_SIZES}
                   bind:selectedBackend
                   bind:selectedBuffer
                   bind:inputExpanded
@@ -298,6 +310,8 @@
         {/if}
       </div>
     </div>
+
+    <!-- Bottom Action Bar -->
     <div
       class="rounded-lg flex flex-row w-screen justify-center bottom-0 px-1.5 mb-1 fixed"
     >
