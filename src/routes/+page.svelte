@@ -3,7 +3,7 @@
   import { get } from "svelte/store";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { Button, Tooltip } from "fluent-svelte";
-  import { adjustBrightness } from "$lib/utils/system";
+  import { adjustBrightness } from "$lib/utils/color";
   import Checkmark from "@fluentui/svg-icons/icons/checkmark_20_regular.svg?component";
   import Copy from "@fluentui/svg-icons/icons/copy_20_regular.svg?component";
   import Pen from "@fluentui/svg-icons/icons/edit_20_regular.svg?component";
@@ -12,7 +12,13 @@
   import DeviceEdit from "$lib/components/DeviceEdit.svelte";
 
   import { inputDevices, outputDevices, accentColor } from "$lib/stores";
-  import { AudioManager } from "$lib/AudioManager";
+  import { getDevices, labelDevices } from "$lib/devices";
+  import {
+    loadConfig,
+    saveConfig,
+    copyConfig,
+    compareConfigs,
+  } from "$lib/config";
   import type { AudioBackend, Config } from "$lib/types";
 
   const AUDIO_BACKENDS: { [key: string]: AudioBackend } = {
@@ -99,7 +105,7 @@
     if (!editDevices) {
       outputEdit.saveTomlFile();
     } else {
-      await AudioManager.saveConfig(currentConfig);
+      await saveConfig(currentConfig);
     }
     listEdited = false;
     textEdited = false;
@@ -145,11 +151,11 @@
       },
     };
 
-    listEdited = !AudioManager.compareConfigs(currentConfig, originalConfig);
+    listEdited = !compareConfigs(currentConfig, originalConfig);
   }
 
   async function loadAndSetConfig() {
-    const config = await AudioManager.loadConfig();
+    const config = await loadConfig();
     originalConfig = JSON.parse(JSON.stringify(config));
 
     selectedBackend = getInternalBackendValue(config.backend);
@@ -158,8 +164,8 @@
         ? "Default"
         : config.bufferSizeSamples.toString();
 
-    await AudioManager.getDevices(selectedBackend);
-    await AudioManager.labelDevices(selectedBackend);
+    await getDevices(selectedBackend);
+    await labelDevices(selectedBackend);
 
     const inputDevicesValue = get(inputDevices);
     const outputDevicesValue = get(outputDevices);
@@ -206,16 +212,16 @@
 
   // Device Management
   async function updateDevicesList() {
-    await AudioManager.getDevices(selectedBackend);
-    await AudioManager.labelDevices(selectedBackend);
+    await getDevices(selectedBackend);
+    await labelDevices(selectedBackend);
     selectedInput = -1;
     selectedOutput = -1;
     updateListEdited();
   }
 
   async function refreshDevices() {
-    await AudioManager.getDevices(selectedBackend);
-    await AudioManager.labelDevices(selectedBackend);
+    await getDevices(selectedBackend);
+    await labelDevices(selectedBackend);
     updateListEdited();
   }
 
@@ -326,7 +332,7 @@
           </div>
           <div class="flex gap-2.5">
             <Tooltip text="Copy the config">
-              <Button on:click={AudioManager.copyConfig}>
+              <Button on:click={copyConfig}>
                 <Copy /><span class="pl-1.5">Copy</span>
               </Button>
             </Tooltip>

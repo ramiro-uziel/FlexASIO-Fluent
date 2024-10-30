@@ -3,7 +3,7 @@
   import { fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { browser } from "$app/environment";
-  import { adjustBrightness } from "$lib/utils/system";
+  import { adjustBrightness } from "$lib/utils/color";
   import { accentColor, inputDevices, outputDevices } from "$lib/stores";
 
   import {

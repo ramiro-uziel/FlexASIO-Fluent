@@ -6,7 +6,7 @@
     getCurrentWebviewWindow,
   } from "@tauri-apps/api/webviewWindow";
   import { ready, accentColor } from "$lib/stores";
-  import { adjustBrightness } from "$lib/utils/system";
+  import { adjustBrightness } from "$lib/utils/color";
   import "../app.css";
 
   let unlisten: (() => void) | undefined;
