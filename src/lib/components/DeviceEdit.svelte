@@ -3,7 +3,7 @@
   import { fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { browser } from "$app/environment";
-  import { adjustBrightness } from "$lib/utils/color";
+  import { adjustBrightness } from "$lib/color";
   import { accentColor, inputDevices, outputDevices } from "$lib/stores";
 
   import {
@@ -16,6 +16,8 @@
     TextBlock,
     Tooltip,
   } from "fluent-svelte";
+
+  import CustomComboBox from "./fluent-svelte-custom/CustomComboBox.svelte";
 
   import Speaker from "@fluentui/svg-icons/icons/speaker_2_20_regular.svg?component";
   import Microphone from "@fluentui/svg-icons/icons/mic_20_regular.svg?component";
@@ -65,6 +67,7 @@
   let outputSetModesEnabled: boolean;
   let inputChannelsEnabled = true;
   let outputChannelsEnabled = true;
+  let isRefreshIndicatorAnimating = false;
 
   // Backend Options
   const getBackendComboBoxOptions = () =>
@@ -101,7 +104,11 @@
   }
 
   function refreshDevices() {
+    isRefreshIndicatorAnimating = true;
     dispatch("refreshDevices");
+    setTimeout(() => {
+      isRefreshIndicatorAnimating = false;
+    }, 1000);
   }
 
   $: if (outputHeight && inputContent && isWidescreen) {
@@ -174,18 +181,17 @@
         style="background-color: var(--fds-card-background-default);"
       >
         <div class="flex gap-2.5 items-center">
-          <ComboBox
+          <CustomComboBox
             items={backendOptions}
-            editable={true}
+            editable={false}
             bind:value={selectedBackend}
-            searchValue={selectedBackend}
             on:close={updateDevices}
             on:input={updateDevices}
-            placeholder="Backend"
+            placeholder="Select a Backend"
             class="w-[150px] custom-combo-box"
             --fds-accent-default={$accentColor}
             --fds-accent-secondary={$accentColor}
-          ></ComboBox>
+          ></CustomComboBox>
           <ComboBox
             items={BufferSize}
             bind:value={selectedBuffer}
@@ -206,10 +212,18 @@
             </Tooltip>
           {/if}
         </div>
-        <div class="space-x-1">
-          <Button on:click={refreshDevices}
-            ><Refresh /><span class="ml-2">Refresh</span></Button
-          >
+        <div class="flex flex-row items-center gap-5">
+          <div
+            class="rounded-full w-2 h-2 transition-all duration-150 ease-out"
+            style="opacity: {isRefreshIndicatorAnimating
+              ? '1'
+              : '0'}; background-color: {$accentColor}"
+          />
+          <div class="space-x-1">
+            <Button on:click={refreshDevices}
+              ><Refresh /><span class="ml-2">Refresh</span></Button
+            >
+          </div>
         </div>
       </div>
       <div

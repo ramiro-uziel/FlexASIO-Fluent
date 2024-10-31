@@ -6,16 +6,18 @@
     getCurrentWebviewWindow,
   } from "@tauri-apps/api/webviewWindow";
   import { ready, accentColor } from "$lib/stores";
-  import { adjustBrightness } from "$lib/utils/color";
+  import { adjustBrightness } from "$lib/color";
   import "../app.css";
 
-  let unlisten: (() => void) | undefined;
+  // Window
   let currentWindow: WebviewWindow;
+  let unlisten: (() => void) | undefined;
 
   function initWindow() {
     currentWindow.show();
   }
 
+  // Theme
   function updateDarkMode(theme: string): void {
     document.documentElement.classList.toggle("dark", theme === "dark");
   }
@@ -32,6 +34,7 @@
     }
   }
 
+  // Disabling context menu and specific keys
   const isTauriLocalhost = (): boolean =>
     window.location.hostname === "tauri.localhost";
 
@@ -44,10 +47,13 @@
   const disableSpecificKeys = (e: KeyboardEvent): void => {
     const isFunctionKey =
       e.key.startsWith("F") && !isNaN(Number(e.key.substring(1)));
+
     const isDisabledCtrlCombination =
       e.ctrlKey && ["f", "g", "j", "p"].includes(e.key.toLowerCase());
+
     const isAllowedCtrlCombination =
       e.ctrlKey && ["a", "c", "v", "x", "z"].includes(e.key.toLowerCase());
+
     if (
       (isFunctionKey || isDisabledCtrlCombination) &&
       !isAllowedCtrlCombination
@@ -78,18 +84,31 @@
     }
   };
 
-  onMount(async () => {
+  // Init
+  async function initializeApp() {
     currentWindow = getCurrentWebviewWindow();
+
     await getAccentColor();
+
+    // Hack for tauri issue, timeout to prevent flickering.
+    // The background color is not transparent on startup for a brief moment,
+    // so we hide the window until the style is applied on the window.
     await new Promise((r) => setTimeout(r, 300));
+
     let theme = await currentWindow.theme();
     updateDarkMode(theme?.toString() || "dark");
+
     unlisten = await currentWindow.onThemeChanged(({ payload: theme }) => {
       updateDarkMode(theme);
     });
 
     setupEventListeners();
+
     ready.set(true);
+  }
+
+  onMount(async () => {
+    await initializeApp();
 
     ready.subscribe((isReady) => {
       if (isReady) {

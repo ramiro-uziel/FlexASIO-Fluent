@@ -3,7 +3,7 @@
   import { get } from "svelte/store";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { Button, Tooltip } from "fluent-svelte";
-  import { adjustBrightness } from "$lib/utils/color";
+  import { adjustBrightness } from "$lib/color";
   import Checkmark from "@fluentui/svg-icons/icons/checkmark_20_regular.svg?component";
   import Copy from "@fluentui/svg-icons/icons/copy_20_regular.svg?component";
   import Pen from "@fluentui/svg-icons/icons/edit_20_regular.svg?component";
@@ -81,7 +81,7 @@
   let outputSetChannels = false;
   let outputChannels = 0;
 
-  // Utility Functions
+  // Backend string conversion from display name to value
   const getInternalBackendValue = (displayName: string) => {
     const backend = Object.values(AUDIO_BACKENDS).find(
       (b) => b.displayName === displayName
@@ -354,16 +354,3 @@
     </div>
   </div>
 {/if}
-
-<style>
-  @import url("https://unpkg.com/fluent-svelte/theme.css");
-
-  :global(body) {
-    color: var(--fds-text-primary);
-    fill: var(--fds-text-primary);
-  }
-
-  :global(body.apply-background-color) {
-    background-color: var(--fds-solid-background-base);
-  }
-</style>
