@@ -1,3 +1,5 @@
+@import url("https://unpkg.com/fluent-svelte/theme.css");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,15 +7,9 @@
 @layer base {
   body {
     @apply transition-colors duration-100;
-    background-color: white;
-  }
-  @media (prefers-color-scheme: dark) {
-    body {
-      @apply transition-colors duration-100;
-      /* background-color: var(--body-bg-color, black); */
-      /* background-color: black; */
-      background-color: transparent;
-    }
+    background-color: transparent;
+    color: var(--fds-text-primary);
+    fill: var(--fds-text-primary);
   }
 }
 /* width */
