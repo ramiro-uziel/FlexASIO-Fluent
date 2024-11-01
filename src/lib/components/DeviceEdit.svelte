@@ -50,6 +50,7 @@
 
   // Backend Props
   export let selectedBackend: string;
+  let previousBackend = selectedBackend;
   export let selectedBuffer: number | string;
   export let AUDIO_BACKENDS;
   export let BufferSize: (
@@ -59,15 +60,48 @@
 
   // State
   const dispatch = createEventDispatcher();
-  let outputHeight: number;
-  let inputContent: HTMLDivElement;
-  let originalInputHeight: string;
   let isWidescreen = false;
   let inputSetModesEnabled: boolean;
   let outputSetModesEnabled: boolean;
   let inputChannelsEnabled = true;
   let outputChannelsEnabled = true;
   let isRefreshIndicatorAnimating = false;
+  let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  // Content Height State
+  let inputContent: HTMLDivElement;
+  let outputContent: HTMLDivElement;
+  let originalInputHeight: string;
+  let resizeObserver: ResizeObserver;
+
+  function synchronizeHeights() {
+    if (!inputContent || !outputContent || !isWidescreen) return;
+
+    const inputHeight = inputContent.scrollHeight;
+    const outputHeight = outputContent.scrollHeight;
+    const maxHeight = Math.max(inputHeight, outputHeight);
+
+    const adjustedHeight = maxHeight + 15;
+
+    inputContent.style.height = `${adjustedHeight}px`;
+    outputContent.style.height = `${adjustedHeight}px`;
+  }
+
+  function resetHeights() {
+    if (!inputContent || !outputContent) return;
+    inputContent.style.height = originalInputHeight;
+    outputContent.style.height = originalInputHeight;
+  }
+
+  $: if (isWidescreen) {
+    synchronizeHeights();
+  } else {
+    resetHeights();
+  }
+
+  $: if ($inputDevices || $outputDevices) {
+    setTimeout(synchronizeHeights, 0);
+  }
 
   // Backend Options
   const getBackendComboBoxOptions = () =>
@@ -99,23 +133,30 @@
     isWidescreen = window.innerWidth >= 685;
   }
 
-  function updateDevices() {
+  function updateDevices(event?: Event) {
+    if (event && selectedBackend === previousBackend) {
+      return;
+    }
+    previousBackend = selectedBackend;
     dispatch("updateDevices");
   }
 
-  function refreshDevices() {
+  function refreshAnimation() {
+    if (refreshTimeout) {
+      clearTimeout(refreshTimeout);
+    }
+
     isRefreshIndicatorAnimating = true;
-    dispatch("refreshDevices");
-    setTimeout(() => {
+
+    refreshTimeout = setTimeout(() => {
       isRefreshIndicatorAnimating = false;
+      refreshTimeout = null;
     }, 1000);
   }
 
-  $: if (outputHeight && inputContent && isWidescreen) {
-    outputHeight += 15;
-    inputContent.style.height = `${outputHeight}px`;
-  } else if (inputContent && !isWidescreen && originalInputHeight) {
-    inputContent.style.height = originalInputHeight;
+  function refreshDevices() {
+    dispatch("refreshDevices");
+    refreshAnimation();
   }
 
   $: inputSetModesEnabled = !inputSetModes;
@@ -146,12 +187,24 @@
       originalInputHeight = inputContent.style.height || "auto";
     }
 
+    resizeObserver = new ResizeObserver(() => {
+      if (isWidescreen) {
+        synchronizeHeights();
+      }
+    });
+
+    if (inputContent) resizeObserver.observe(inputContent);
+    if (outputContent) resizeObserver.observe(outputContent);
+
     checkScreenWidth();
     window.addEventListener("resize", checkScreenWidth);
 
     return () => {
       if (browser) {
         window.removeEventListener("resize", checkScreenWidth);
+        if (resizeObserver) {
+          resizeObserver.disconnect();
+        }
       }
     };
   });
@@ -415,12 +468,12 @@
               <svelte:fragment slot="content">
                 <div
                   class="flex flex-col w-full gap-2 overflow-scroll"
+                  bind:this={outputContent}
                   style={isWidescreen
                     ? selectedBackend === "WASAPI"
                       ? "max-height: calc(100vh - 404px);"
                       : "max-height: calc(100vh - 350px);"
                     : ""}
-                  bind:clientHeight={outputHeight}
                 >
                   {#each $outputDevices as { label, device, value }}
                     <div class="w-full">
