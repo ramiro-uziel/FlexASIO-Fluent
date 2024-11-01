@@ -30,7 +30,6 @@
 
   const BUFFER_SIZES = [
     { name: "Default", value: "Default" },
-    { name: "0", value: "0" },
     { name: "16", value: "16" },
     { name: "32", value: "32" },
     { name: "64", value: "64" },

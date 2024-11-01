@@ -142,7 +142,7 @@
     -webkit-box-shadow: none;
     -moz-box-shadow: none;
     box-shadow: none;
-    height: calc(80vh - 200px);
+    height: calc(100vh - 200px);
     width: 100%;
   }
 </style>
