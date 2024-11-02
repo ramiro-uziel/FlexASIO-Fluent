@@ -41,6 +41,7 @@
 
   // State Management
   let outputEdit: OutputEdit;
+  let invalidConfig = false;
   let loaded = false;
   let textEdited = false;
   let listEdited = false;
@@ -113,7 +114,10 @@
 
   // Config Management
   function updateListEdited() {
-    if (!originalConfig) return;
+    if (!originalConfig) {
+      listEdited = false;
+      return;
+    }
 
     const inputDeviceName =
       selectedInput >= 0
@@ -154,59 +158,63 @@
   }
 
   async function loadAndSetConfig() {
-    const config = await loadConfig();
-    originalConfig = JSON.parse(JSON.stringify(config));
+    try {
+      const config = await loadConfig();
+      originalConfig = JSON.parse(JSON.stringify(config));
 
-    selectedBackend = getInternalBackendValue(config.backend);
-    selectedBuffer =
-      config.bufferSizeSamples === null
-        ? "Default"
-        : config.bufferSizeSamples.toString();
+      selectedBackend = getInternalBackendValue(config.backend);
+      selectedBuffer =
+        config.bufferSizeSamples === null
+          ? "Default"
+          : config.bufferSizeSamples.toString();
 
-    await getDevices(selectedBackend);
-    await labelDevices(selectedBackend);
+      await getDevices(selectedBackend);
+      await labelDevices(selectedBackend);
 
-    const inputDevicesValue = get(inputDevices);
-    const outputDevicesValue = get(outputDevices);
+      const inputDevicesValue = get(inputDevices);
+      const outputDevicesValue = get(outputDevices);
 
-    // Set device selections
-    selectedInput =
-      inputDevicesValue.findIndex((d) => d.name === config.input.device) - 1;
-    selectedOutput =
-      outputDevicesValue.findIndex((d) => d.name === config.output.device) - 1;
+      selectedInput =
+        inputDevicesValue.findIndex((d) => d.name === config.input.device) - 1;
+      selectedOutput =
+        outputDevicesValue.findIndex((d) => d.name === config.output.device) -
+        1;
 
-    if (selectedInput === -2) selectedInput = -1;
-    if (selectedOutput === -2) selectedOutput = -1;
+      if (selectedInput === -2) selectedInput = -1;
+      if (selectedOutput === -2) selectedOutput = -1;
 
-    // Set latency values
-    inputSetLatency = config.input.suggestedLatencySeconds !== null;
-    inputLatency = config.input.suggestedLatencySeconds || 0;
-    outputSetLatency = config.output.suggestedLatencySeconds !== null;
-    outputLatency = config.output.suggestedLatencySeconds || 0;
+      inputSetLatency = config.input.suggestedLatencySeconds !== null;
+      inputLatency = config.input.suggestedLatencySeconds || 0;
+      outputSetLatency = config.output.suggestedLatencySeconds !== null;
+      outputLatency = config.output.suggestedLatencySeconds || 0;
 
-    // Set channel values
-    inputSetChannels = config.input.channels !== null;
-    inputChannels = config.input.channels || 0;
-    outputSetChannels = config.output.channels !== null;
-    outputChannels = config.output.channels || 0;
+      inputSetChannels = config.input.channels !== null;
+      inputChannels = config.input.channels || 0;
+      outputSetChannels = config.output.channels !== null;
+      outputChannels = config.output.channels || 0;
 
-    // Handle WASAPI-specific settings
-    if (selectedBackend === "WASAPI") {
-      inputSetModes =
-        config.input.wasapiExclusiveMode !== null ||
-        config.input.wasapiAutoConvert !== null;
-      inputExclusive = config.input.wasapiExclusiveMode || false;
-      inputAutoconvert = config.input.wasapiAutoConvert || false;
+      if (selectedBackend === "WASAPI") {
+        inputSetModes =
+          config.input.wasapiExclusiveMode !== null ||
+          config.input.wasapiAutoConvert !== null;
+        inputExclusive = config.input.wasapiExclusiveMode || false;
+        inputAutoconvert = config.input.wasapiAutoConvert || false;
 
-      outputSetModes =
-        config.output.wasapiExclusiveMode !== null ||
-        config.output.wasapiAutoConvert !== null;
-      outputExclusive = config.output.wasapiExclusiveMode || false;
-      outputAutoconvert = config.output.wasapiAutoConvert || false;
+        outputSetModes =
+          config.output.wasapiExclusiveMode !== null ||
+          config.output.wasapiAutoConvert !== null;
+        outputExclusive = config.output.wasapiExclusiveMode || false;
+        outputAutoconvert = config.output.wasapiAutoConvert || false;
+      }
+
+      updateListEdited();
+      invalidConfig = false;
+      loaded = true;
+    } catch (error) {
+      console.error("Error loading config:", error);
+      invalidConfig = true;
+      loaded = true;
     }
-
-    updateListEdited();
-    loaded = true;
   }
 
   // Device Management

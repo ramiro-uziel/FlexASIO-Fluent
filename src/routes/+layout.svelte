@@ -34,6 +34,17 @@
     }
   }
 
+  async function logDllVersion() {
+    try {
+      const version = await invoke("get_dll_product_version", {
+        filePath: "C:\\Program Files\\FlexASIO\\x64\\FlexASIO.dll",
+      });
+      console.log("Product Version:", version);
+    } catch (error) {
+      console.error("Error getting version:", error);
+    }
+  }
+
   // Disabling context menu and specific keys
   const isTauriLocalhost = (): boolean =>
     window.location.hostname === "tauri.localhost";
@@ -89,6 +100,7 @@
     currentWindow = getCurrentWebviewWindow();
 
     await getAccentColor();
+    await logDllVersion();
 
     // Hack for tauri issue, timeout to prevent flickering.
     // The background color is not transparent on startup for a brief moment,

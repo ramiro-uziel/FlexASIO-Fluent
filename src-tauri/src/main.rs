@@ -15,6 +15,14 @@ use windows::Win32::Foundation::BOOL;
 use windows::Win32::Graphics::Dwm::DwmGetColorizationColor;
 use windows_version::OsVersion;
 
+use std::ffi::OsStr;
+use std::os::windows::ffi::OsStrExt;
+use windows::core::w;
+use windows::core::PCWSTR;
+use windows::Win32::Storage::FileSystem::{
+    GetFileVersionInfoSizeW, GetFileVersionInfoW, VerQueryValueW,
+};
+
 use tauri_plugin_window_state::StateFlags;
 
 #[allow(non_snake_case)]
@@ -178,6 +186,77 @@ fn get_windows_version() -> (u32, u32, u32) {
     (version.major, version.minor, version.build)
 }
 
+#[command]
+fn get_dll_product_version(file_path: &str) -> Result<String, String> {
+    let wide_path: Vec<u16> = OsStr::new(file_path).encode_wide().chain(Some(0)).collect();
+
+    unsafe {
+        let mut handle = 0;
+        let size = GetFileVersionInfoSizeW(PCWSTR(wide_path.as_ptr()), Some(&mut handle));
+
+        if size == 0 {
+            return Err("Failed to get version info size".to_string());
+        }
+
+        let mut version_info = vec![0u8; size as usize];
+
+        if !GetFileVersionInfoW(
+            PCWSTR(wide_path.as_ptr()),
+            handle,
+            size,
+            version_info.as_mut_ptr().cast(),
+        )
+        .is_ok()
+        {
+            return Err("Failed to get version info".to_string());
+        }
+
+        let mut lang_ptr = std::ptr::null_mut();
+        let mut lang_len = 0u32;
+
+        if !VerQueryValueW(
+            version_info.as_ptr().cast(),
+            w!("\\VarFileInfo\\Translation"),
+            &mut lang_ptr,
+            &mut lang_len,
+        )
+        .as_bool()
+        {
+            return Err("Failed to query language info".to_string());
+        }
+
+        let lang_codepage = *(lang_ptr as *const u32);
+        let lang_id = lang_codepage & 0xFFFF;
+        let codepage = lang_codepage >> 16;
+
+        let query = format!(
+            "\\StringFileInfo\\{:04x}{:04x}\\ProductVersion",
+            lang_id, codepage
+        );
+        let wide_query: Vec<u16> = OsStr::new(&query).encode_wide().chain(Some(0)).collect();
+
+        let mut version_ptr = std::ptr::null_mut();
+        let mut version_len = 0u32;
+
+        if !VerQueryValueW(
+            version_info.as_ptr().cast(),
+            PCWSTR(wide_query.as_ptr()),
+            &mut version_ptr,
+            &mut version_len,
+        )
+        .as_bool()
+        {
+            return Err("Failed to query product version".to_string());
+        }
+
+        let version_slice =
+            std::slice::from_raw_parts(version_ptr as *const u16, version_len as usize);
+        let version_string = String::from_utf16_lossy(version_slice);
+
+        Ok(version_string.trim_end_matches('\0').to_string())
+    }
+}
+
 fn main() {
     let mut flags = StateFlags::all();
     flags.remove(StateFlags::VISIBLE);
@@ -201,7 +280,8 @@ fn main() {
             load_config,
             save_config,
             get_accent_color,
-            get_windows_version
+            get_windows_version,
+            get_dll_product_version,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
