@@ -100,7 +100,6 @@
     currentWindow = getCurrentWebviewWindow();
 
     await getAccentColor();
-    await logDllVersion();
 
     // Hack for tauri issue, timeout to prevent flickering.
     // The background color is not transparent on startup for a brief moment,
