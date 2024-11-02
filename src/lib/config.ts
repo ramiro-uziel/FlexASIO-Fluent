@@ -62,9 +62,11 @@ export function compareConfigs(
   current: Partial<Config>,
   original: Config | null
 ): boolean {
-  if (!original) return false;
+  if (!original || !current) return false;
 
   const compareObjects = (obj1: any, obj2: any): boolean => {
+    if (!obj1 || !obj2) return false;
+
     const keys1 = Object.keys(obj1);
     const keys2 = Object.keys(obj2);
 
