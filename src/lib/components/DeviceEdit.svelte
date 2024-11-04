@@ -1,21 +1,13 @@
 <script lang="ts">
+  import DevicesColumn from "./DevicesColumn.svelte";
+
   import { onMount, createEventDispatcher } from "svelte";
   import { fly } from "svelte/transition";
-  import { cubicOut } from "svelte/easing";
+  import { expoOut } from "svelte/easing";
   import { browser } from "$app/environment";
-  import { adjustBrightness } from "$lib/color";
   import { accentColor, inputDevices, outputDevices } from "$lib/stores";
 
-  import {
-    Button,
-    Checkbox,
-    ComboBox,
-    Expander,
-    NumberBox,
-    RadioButton,
-    TextBlock,
-    Tooltip,
-  } from "fluent-svelte";
+  import { Button, ComboBox, TextBlock, Tooltip } from "fluent-svelte";
 
   import CustomComboBox from "./fluent-svelte-custom/CustomComboBox.svelte";
 
@@ -63,8 +55,6 @@
   let isWidescreen = false;
   let inputSetModesEnabled: boolean;
   let outputSetModesEnabled: boolean;
-  let inputChannelsEnabled = true;
-  let outputChannelsEnabled = true;
   let isRefreshIndicatorAnimating = false;
   let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -159,29 +149,6 @@
     refreshAnimation();
   }
 
-  $: inputSetModesEnabled = !inputSetModes;
-  $: outputSetModesEnabled = !outputSetModes;
-
-  $: if (inputSetModesEnabled) {
-    inputAutoconvert = false;
-    inputExclusive = false;
-  }
-
-  $: if (outputSetModesEnabled) {
-    outputAutoconvert = false;
-    outputExclusive = false;
-  }
-
-  $: inputChannelsEnabled = inputChannels <= 0;
-  $: if (inputChannels == 0) {
-    inputSetChannels = false;
-  }
-
-  $: outputChannelsEnabled = outputChannels <= 0;
-  $: if (outputChannels == 0) {
-    outputSetChannels = false;
-  }
-
   onMount(() => {
     if (inputContent) {
       originalInputHeight = inputContent.style.height || "auto";
@@ -210,17 +177,20 @@
   });
 </script>
 
-<div class="flex flex-col self-center w-full">
-  <TextBlock data-tauri-drag-region variant="title">Devices</TextBlock>
+<div
+  class="flex flex-row items-center justify-between w-full"
+  data-tauri-drag-region
+>
+  <TextBlock variant="title" data-tauri-drag-region>Devices</TextBlock>
 </div>
 
 <div
   in:fly={{
-    delay: 100,
     x: 0,
-    y: 10,
-    duration: 150,
-    easing: cubicOut,
+    y: 20,
+    duration: 400,
+    opacity: 0.2,
+    easing: expoOut,
   }}
   class="flex flex-col mt-0 mb-0 select-none items-center overflow-scroll"
   style="height: calc(100vh - 89px);"
@@ -282,320 +252,42 @@
       <div
         class={`flex rounded-b-lg ${isWidescreen ? "flex-row gap-2" : "flex-col gap-5"}`}
       >
-        <div class="flex flex-col w-full">
-          <div class="mb-[1px]">
-            <Expander
-              bind:expanded={inputExpanded}
-              --fds-control-fast-duration="0s"
-              --fds-control-slow-duration="0s"
-            >
-              <div class="flex flex-row justify-between">
-                <div class="flex flex-row gap-2">
-                  <Microphone></Microphone>
-                  <TextBlock variant="bodyStrong">Input</TextBlock>
-                </div>
-                <TextBlock
-                  variant="body"
-                  style="color: var(--fds-text-tertiary);"
-                >
-                  {($inputDevices[selectedInput + 1]?.label ?? "None").length >
-                  22
-                    ? ($inputDevices[selectedInput + 1]?.label ?? "None").slice(
-                        0,
-                        22
-                      ) + "..."
-                    : ($inputDevices[selectedInput + 1]?.label ?? "None")}
-                </TextBlock>
-              </div>
-
-              <svelte:fragment slot="content">
-                <div
-                  class="flex flex-col w-full gap-2 overflow-scroll"
-                  bind:this={inputContent}
-                  style={isWidescreen
-                    ? selectedBackend === "WASAPI"
-                      ? "max-height: calc(100vh - 404px);"
-                      : "max-height: calc(100vh - 350px);"
-                    : ""}
-                >
-                  {#each $inputDevices as { label, device, value }}
-                    <div class="w-full">
-                      <RadioButton
-                        bind:group={selectedInput}
-                        {value}
-                        --fds-accent-default={$accentColor}
-                        --fds-accent-secondary={$accentColor}
-                        --fds-accent-tertiary={adjustBrightness(
-                          $accentColor,
-                          -10
-                        )}
-                        ><div class="flex flex-col">
-                          <TextBlock variant="body" class="">{label}</TextBlock>
-                          <TextBlock
-                            variant="caption"
-                            style="color: var(--fds-text-tertiary);"
-                            >{device}</TextBlock
-                          >
-                        </div></RadioButton
-                      >
-                    </div>
-                  {/each}
-                </div>
-              </svelte:fragment>
-            </Expander>
-          </div>
-          {#if selectedBackend === "WASAPI"}
-            <div
-              class="flex flex-col px-3.5 py-2.5 mb-0.5 mx-[1px] rounded-[4px] justify-between gap-2"
-              style="background-color: var(--fds-card-background-default);"
-            >
-              <div class="flex flex-row justify-between items-center">
-                <div class="flex flex-row items-center">
-                  <Checkbox
-                    --fds-accent-default={$accentColor}
-                    --fds-accent-secondary={$accentColor}
-                    --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                    on:input={() => (inputSetModes = !inputSetModes)}
-                    bind:checked={inputSetModes}
-                    >Set Modes
-                  </Checkbox>
-                </div>
-                <div class="flex flex-row gap-2">
-                  <Checkbox
-                    --fds-accent-default={$accentColor}
-                    --fds-accent-secondary={$accentColor}
-                    --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                    bind:checked={inputExclusive}
-                    bind:disabled={inputSetModesEnabled}>Exclusive</Checkbox
-                  >
-                  <Checkbox
-                    --fds-accent-default={$accentColor}
-                    --fds-accent-secondary={$accentColor}
-                    --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                    bind:checked={inputAutoconvert}
-                    bind:disabled={inputSetModesEnabled}>Autoconvert</Checkbox
-                  >
-                </div>
-              </div>
-            </div>
-          {/if}
-
-          <div
-            class="flex flex-col px-3.5 py-2.5 mb-0.5 mx-[1px] rounded-[4px] justify-between gap-2"
-            style="background-color: var(--fds-card-background-default);"
-          >
-            <div class="flex flex-row justify-between items-center">
-              <TextBlock variant="bodyStrong" class="w-[90px]"
-                >Latency</TextBlock
-              >
-              <div class="flex flex-row gap-3">
-                <Checkbox
-                  --fds-accent-default={$accentColor}
-                  --fds-accent-secondary={$accentColor}
-                  --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                  bind:checked={inputSetLatency}
-                ></Checkbox>
-                <NumberBox
-                  placeholder="0"
-                  inline={true}
-                  step={0.1}
-                  min={0}
-                  class="min-w-[163px] max-w-[163px]"
-                  --fds-accent-default={$accentColor}
-                  --fds-accent-secondary={$accentColor}
-                  --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                  bind:value={inputLatency}
-                ></NumberBox>
-              </div>
-            </div>
-          </div>
-          <div
-            class="flex flex-col px-3.5 py-2.5 mx-[1px] rounded-[4px] justify-between gap-2"
-            style="background-color: var(--fds-card-background-default);"
-          >
-            <div class="flex flex-row justify-between items-center">
-              <TextBlock variant="bodyStrong" class="w-[90px]"
-                >Channels</TextBlock
-              >
-              <div class="flex flex-row gap-3">
-                <Checkbox
-                  --fds-accent-default={$accentColor}
-                  --fds-accent-secondary={$accentColor}
-                  --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                  bind:checked={inputSetChannels}
-                  bind:disabled={inputChannelsEnabled}
-                ></Checkbox>
-                <NumberBox
-                  placeholder="0"
-                  inline={true}
-                  step={1}
-                  min={0}
-                  class="min-w-[163px] max-w-[163px]"
-                  --fds-accent-default={$accentColor}
-                  --fds-accent-secondary={$accentColor}
-                  --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                  bind:value={inputChannels}
-                ></NumberBox>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="flex flex-col w-full">
-          <div class="mb-[1px]">
-            <Expander
-              bind:expanded={outputExpanded}
-              --fds-control-fast-duration="0s"
-              --fds-control-slow-duration="0s"
-            >
-              <div class="flex flex-row justify-between">
-                <div class="flex flex-row gap-2">
-                  <Speaker></Speaker>
-                  <TextBlock variant="bodyStrong">Output</TextBlock>
-                </div>
-                <TextBlock
-                  variant="body"
-                  style="color: var(--fds-text-tertiary);"
-                >
-                  {($outputDevices[selectedOutput + 1]?.label ?? "None")
-                    .length > 22
-                    ? (
-                        $outputDevices[selectedOutput + 1]?.label ?? "None"
-                      ).slice(0, 22) + "..."
-                    : ($outputDevices[selectedOutput + 1]?.label ?? "None")}
-                </TextBlock>
-              </div>
-
-              <svelte:fragment slot="content">
-                <div
-                  class="flex flex-col w-full gap-2 overflow-scroll"
-                  bind:this={outputContent}
-                  style={isWidescreen
-                    ? selectedBackend === "WASAPI"
-                      ? "max-height: calc(100vh - 404px);"
-                      : "max-height: calc(100vh - 350px);"
-                    : ""}
-                >
-                  {#each $outputDevices as { label, device, value }}
-                    <div class="w-full">
-                      <RadioButton
-                        bind:group={selectedOutput}
-                        {value}
-                        --fds-accent-default={$accentColor}
-                        --fds-accent-secondary={$accentColor}
-                        --fds-accent-tertiary={adjustBrightness(
-                          $accentColor,
-                          -10
-                        )}
-                        ><div class="flex flex-col">
-                          <TextBlock variant="body" class="">{label}</TextBlock>
-                          <TextBlock
-                            variant="caption"
-                            style="color: var(--fds-text-tertiary);"
-                            >{device}</TextBlock
-                          >
-                        </div></RadioButton
-                      >
-                    </div>
-                  {/each}
-                </div>
-              </svelte:fragment>
-            </Expander>
-          </div>
-          {#if selectedBackend === "WASAPI"}
-            <div
-              class="flex flex-col px-3.5 py-2.5 mb-0.5 mx-[1px] rounded-[4px] justify-between gap-2"
-              style="background-color: var(--fds-card-background-default);"
-            >
-              <div class="flex flex-row justify-between items-center">
-                <div class="flex flex-row items-center">
-                  <Checkbox
-                    --fds-accent-default={$accentColor}
-                    --fds-accent-secondary={$accentColor}
-                    --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                    on:input={() => (outputSetModes = !outputSetModes)}
-                    bind:checked={outputSetModes}
-                    >Set Modes
-                  </Checkbox>
-                </div>
-                <div class="flex flex-row gap-2">
-                  <Checkbox
-                    --fds-accent-default={$accentColor}
-                    --fds-accent-secondary={$accentColor}
-                    --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                    bind:checked={outputExclusive}
-                    bind:disabled={outputSetModesEnabled}>Exclusive</Checkbox
-                  >
-                  <Checkbox
-                    --fds-accent-default={$accentColor}
-                    --fds-accent-secondary={$accentColor}
-                    --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                    bind:checked={outputAutoconvert}
-                    bind:disabled={outputSetModesEnabled}>Autoconvert</Checkbox
-                  >
-                </div>
-              </div>
-            </div>
-          {/if}
-          <div
-            class="flex flex-col px-3.5 py-2.5 mb-0.5 mx-[1px] rounded-[4px] justify-between gap-2"
-            style="background-color: var(--fds-card-background-default);"
-          >
-            <div class="flex flex-row justify-between items-center">
-              <TextBlock variant="bodyStrong" class="w-[90px]"
-                >Latency</TextBlock
-              >
-              <div class="flex flex-row gap-3">
-                <Checkbox
-                  --fds-accent-default={$accentColor}
-                  --fds-accent-secondary={$accentColor}
-                  --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                  bind:checked={outputSetLatency}
-                ></Checkbox>
-                <NumberBox
-                  placeholder="0"
-                  inline={true}
-                  step={0.1}
-                  min={0}
-                  class="min-w-[163px] max-w-[163px]"
-                  --fds-accent-default={$accentColor}
-                  --fds-accent-secondary={$accentColor}
-                  --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                  bind:value={outputLatency}
-                ></NumberBox>
-              </div>
-            </div>
-          </div>
-          <div
-            class="flex flex-col px-3.5 py-2.5 mx-[1px] rounded-[4px] justify-between gap-2"
-            style="background-color: var(--fds-card-background-default);"
-          >
-            <div class="flex flex-row justify-between items-center">
-              <TextBlock variant="bodyStrong" class="w-[90px]"
-                >Channels</TextBlock
-              >
-              <div class="flex flex-row gap-3">
-                <Checkbox
-                  --fds-accent-default={$accentColor}
-                  --fds-accent-secondary={$accentColor}
-                  --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                  bind:checked={outputSetChannels}
-                  bind:disabled={outputChannelsEnabled}
-                ></Checkbox>
-                <NumberBox
-                  placeholder="0"
-                  inline={true}
-                  step={1}
-                  min={0}
-                  class="min-w-[163px] max-w-[163px]"
-                  --fds-accent-default={$accentColor}
-                  --fds-accent-secondary={$accentColor}
-                  --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                  bind:value={outputChannels}
-                ></NumberBox>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DevicesColumn
+          columnLabel="Input"
+          icon={Microphone}
+          bind:expanded={inputExpanded}
+          bind:setModes={inputSetModes}
+          bind:exclusive={inputExclusive}
+          bind:autoconvert={inputAutoconvert}
+          bind:selectedDevice={selectedInput}
+          bind:setLatency={inputSetLatency}
+          bind:latency={inputLatency}
+          bind:setChannels={inputSetChannels}
+          bind:channels={inputChannels}
+          bind:devices={$inputDevices}
+          bind:contentRef={inputContent}
+          bind:SetModesEnabled={inputSetModesEnabled}
+          bind:selectedBackend
+          bind:isWidescreen
+        ></DevicesColumn>
+        <DevicesColumn
+          columnLabel="Output"
+          icon={Speaker}
+          bind:expanded={outputExpanded}
+          bind:setModes={outputSetModes}
+          bind:exclusive={outputExclusive}
+          bind:autoconvert={outputAutoconvert}
+          bind:selectedDevice={selectedOutput}
+          bind:setLatency={outputSetLatency}
+          bind:latency={outputLatency}
+          bind:setChannels={outputSetChannels}
+          bind:channels={outputChannels}
+          bind:devices={$outputDevices}
+          bind:contentRef={outputContent}
+          bind:SetModesEnabled={outputSetModesEnabled}
+          bind:selectedBackend
+          bind:isWidescreen
+        ></DevicesColumn>
       </div>
     </div>
   </div>

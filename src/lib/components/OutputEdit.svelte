@@ -6,7 +6,7 @@
   import { onMount } from "svelte";
   import { TextBlock } from "fluent-svelte";
   import { fly } from "svelte/transition";
-  import { cubicOut } from "svelte/easing";
+  import { expoOut } from "svelte/easing";
   import { Menu, PredefinedMenuItem } from "@tauri-apps/api/menu";
 
   const tomlContent: Writable<string> = writable("");
@@ -76,7 +76,7 @@
   <TextBlock data-tauri-drag-region variant="title">Output</TextBlock>
 </div>
 <div
-  in:fly={{ delay: 100, x: 0, y: 10, duration: 150, easing: cubicOut }}
+  in:fly={{ x: 0, y: 20, duration: 400, opacity: 0.2, easing: expoOut }}
   class="flex flex-col mt-0 mb-0 select-none items-center overflow-y-scroll overflow-x-hidden gap-2.5 py-2"
   style="height: calc(100vh - 89px);"
 >

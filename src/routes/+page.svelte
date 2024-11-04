@@ -1,24 +1,31 @@
 <script lang="ts">
+  import SettingsModal from "../lib/components/SettingsModal.svelte";
+
   import { onMount } from "svelte";
   import { get } from "svelte/store";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { Button, Tooltip } from "fluent-svelte";
-  import { adjustBrightness } from "$lib/color";
+
   import Checkmark from "@fluentui/svg-icons/icons/checkmark_20_regular.svg?component";
   import Copy from "@fluentui/svg-icons/icons/copy_20_regular.svg?component";
   import Pen from "@fluentui/svg-icons/icons/edit_20_regular.svg?component";
+  import Settings from "@fluentui/svg-icons/icons/settings_20_regular.svg?component";
+  import Save from "@fluentui/svg-icons/icons/save_20_regular.svg?component";
+  import Folder from "@fluentui/svg-icons/icons/folder_20_regular.svg?component";
 
   import OutputEdit from "$lib/components/OutputEdit.svelte";
   import DeviceEdit from "$lib/components/DeviceEdit.svelte";
 
-  import { inputDevices, outputDevices, accentColor } from "$lib/stores";
-  import { getDevices, labelDevices } from "$lib/devices";
   import {
     loadConfig,
     saveConfig,
     copyConfig,
     compareConfigs,
   } from "$lib/config";
+  import { inputDevices, outputDevices, accentColor } from "$lib/stores";
+  import { getDevices, labelDevices } from "$lib/devices";
+  import { adjustBrightness } from "$lib/color";
+
   import type { AudioBackend, Config } from "$lib/types";
 
   const AUDIO_BACKENDS: { [key: string]: AudioBackend } = {
@@ -54,6 +61,7 @@
   // UI State
   let editDevices = true;
   let toggleName = "Edit Output";
+  let showModal = true;
 
   // Device Settings State
   let selectedBackend: string;
@@ -95,6 +103,11 @@
   };
 
   // Event Handlers
+
+  async function toggleModal() {
+    showModal = !showModal;
+  }
+
   async function toggleDevices() {
     editDevices = !editDevices;
     toggleName = editDevices ? "Edit Output" : "Edit Devices";
@@ -271,6 +284,9 @@
 
 {#if loaded}
   <div class="overflow-hidden w-full">
+    {#if showModal}
+      <SettingsModal bind:showModal></SettingsModal>
+    {/if}
     <div data-tauri-drag-region class="w-full h-1"></div>
     <div class="flex flex-row w-full justify-center">
       <div class="flex flex-row w-full max-w-[1000px] min-w-[300px]">
@@ -333,17 +349,34 @@
       >
         <div class="flex flex-row justify-between w-full">
           <div class="flex gap-2.5">
-            <Button on:click={toggleDevices}>
+            <Button on:click={toggleDevices} class="w-[130px]">
               <Pen /><span class="pl-1.5">{toggleName}</span>
             </Button>
+
+            <Button on:click={toggleModal}>
+              <Settings class="-mx-[5px]" />
+            </Button>
           </div>
+
           <div class="flex gap-2.5">
-            <Tooltip text="Copy the config">
+            <Tooltip text="Save to file">
               <Button on:click={copyConfig}>
-                <Copy /><span class="pl-1.5">Copy</span>
+                <Save />
               </Button>
             </Tooltip>
-            <Tooltip text="Apply the config" alignment="end" offset={5}>
+
+            <Tooltip text="Load from file">
+              <Button on:click={copyConfig}>
+                <Folder />
+              </Button>
+            </Tooltip>
+
+            <Tooltip text="Copy config">
+              <Button on:click={copyConfig}>
+                <Copy />
+              </Button>
+            </Tooltip>
+            <Tooltip text="Apply config">
               <Button
                 on:click={handleApply}
                 {variant}
@@ -352,7 +385,7 @@
                 --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
               >
                 <Checkmark class={variant === "accent" ? "fill-black" : ""} />
-                <span class="pl-1.5">Apply</span>
+                <span class="pl-1.5 wd:block hidden">Apply</span>
               </Button>
             </Tooltip>
           </div>
