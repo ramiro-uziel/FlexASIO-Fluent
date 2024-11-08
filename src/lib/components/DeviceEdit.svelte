@@ -18,7 +18,6 @@
 
   import type { AudioBackend } from "$lib/types";
 
-  // Input Props
   export let inputExpanded: boolean;
   export let inputSetModes: boolean;
   export let inputExclusive: boolean;
@@ -29,7 +28,6 @@
   export let inputSetChannels: boolean;
   export let inputChannels: number;
 
-  // Output Props
   export let outputExpanded: boolean;
   export let outputSetModes: boolean;
   export let outputExclusive: boolean;
@@ -40,7 +38,6 @@
   export let outputSetChannels: boolean;
   export let outputChannels: number;
 
-  // Backend Props
   export let selectedBackend: string;
   let previousBackend = selectedBackend;
   export let selectedBuffer: number | string;
@@ -50,7 +47,6 @@
     | { name: string; value: number }
   )[];
 
-  // State
   const dispatch = createEventDispatcher();
   let isWidescreen = false;
   let inputSetModesEnabled: boolean;
@@ -58,7 +54,6 @@
   let isRefreshIndicatorAnimating = false;
   let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  // Content Height State
   let inputContent: HTMLDivElement;
   let outputContent: HTMLDivElement;
   let resizeObserver: ResizeObserver;
@@ -76,28 +71,18 @@
     outputContent.style.height = `${adjustedHeight}px`;
   }
 
-  function resetHeights() {
-    if (!inputContent || !outputContent) return;
-    inputContent.style.height = "auto";
-    outputContent.style.height = "auto";
-  }
-
   $: if (isWidescreen) {
     synchronizeHeights();
-  } else {
-    resetHeights();
   }
 
   $: if ($inputDevices || $outputDevices) {
     setTimeout(synchronizeHeights, 0);
   }
 
-  // Backend Options
   const getBackendComboBoxOptions = () =>
     Object.values(AUDIO_BACKENDS).map((b) => {
       const backend = b as AudioBackend;
       return {
-        // Hack for Fluent Svelte ComboBox having mismatched value and display text
         name: backend.value,
         value: backend.value,
       };
@@ -105,7 +90,6 @@
 
   const backendOptions = getBackendComboBoxOptions();
 
-  // Event Handlers
   function handleBufferInput(event: Event) {
     const target = event.target as HTMLInputElement;
     const inputValue = target.value;
