@@ -60,7 +60,9 @@
   onMount(() => {
     if (contentRef) {
       resizeObserver = new ResizeObserver(() => {
-        synchronizeHeights();
+        if (isWidescreen) {
+          synchronizeHeights();
+        }
       });
 
       resizeObserver.observe(contentRef);

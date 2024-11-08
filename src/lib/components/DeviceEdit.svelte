@@ -61,7 +61,6 @@
   // Content Height State
   let inputContent: HTMLDivElement;
   let outputContent: HTMLDivElement;
-  let originalInputHeight: string;
   let resizeObserver: ResizeObserver;
 
   function synchronizeHeights() {
@@ -79,8 +78,8 @@
 
   function resetHeights() {
     if (!inputContent || !outputContent) return;
-    inputContent.style.height = originalInputHeight;
-    outputContent.style.height = originalInputHeight;
+    inputContent.style.height = "auto";
+    outputContent.style.height = "auto";
   }
 
   $: if (isWidescreen) {
@@ -150,10 +149,6 @@
   }
 
   onMount(() => {
-    if (inputContent) {
-      originalInputHeight = inputContent.style.height || "auto";
-    }
-
     resizeObserver = new ResizeObserver(() => {
       if (isWidescreen) {
         synchronizeHeights();
