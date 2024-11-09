@@ -1,7 +1,5 @@
 <script lang="ts">
-  import SettingsModal from "../lib/components/SettingsModal.svelte";
-
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { get } from "svelte/store";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { Button, Tooltip } from "fluent-svelte";
@@ -9,24 +7,30 @@
   import Checkmark from "@fluentui/svg-icons/icons/checkmark_20_regular.svg?component";
   import Copy from "@fluentui/svg-icons/icons/copy_20_regular.svg?component";
   import Pen from "@fluentui/svg-icons/icons/edit_20_regular.svg?component";
-  import Settings from "@fluentui/svg-icons/icons/settings_20_regular.svg?component";
+  import Info from "@fluentui/svg-icons/icons/info_20_regular.svg?component";
   import Save from "@fluentui/svg-icons/icons/save_20_regular.svg?component";
   import Folder from "@fluentui/svg-icons/icons/folder_20_regular.svg?component";
 
   import OutputEdit from "$lib/components/OutputEdit.svelte";
   import DeviceEdit from "$lib/components/DeviceEdit.svelte";
+  import InfoModal from "$lib/components/InfoModal.svelte";
 
   import {
     loadConfig,
     saveConfig,
     copyConfig,
     compareConfigs,
+    saveConfigToFile,
+    loadConfigFromFile,
   } from "$lib/config";
   import { inputDevices, outputDevices, accentColor } from "$lib/stores";
   import { getDevices, labelDevices } from "$lib/devices";
   import { adjustBrightness } from "$lib/color";
 
+  import { checkVersion, latestVersion, updateAvailable } from "$lib/app";
+
   import type { AudioBackend, Config } from "$lib/types";
+  import { invoke } from "@tauri-apps/api/core";
 
   const AUDIO_BACKENDS: { [key: string]: AudioBackend } = {
     MME: { value: "MME", displayName: "MME" },
@@ -52,7 +56,10 @@
   let loaded = false;
   let textEdited = false;
   let listEdited = false;
-  let variant: "accent" | "standard" | "hyperlink" | undefined = "standard";
+  let applyButtonVariant: "accent" | "standard" | "hyperlink" | undefined =
+    "standard";
+  let infoButtonVariant: "accent" | "standard" | "hyperlink" | undefined =
+    "standard";
 
   // Config State
   let originalConfig: Config | null = null;
@@ -60,8 +67,7 @@
 
   // UI State
   let editDevices = true;
-  let toggleName = "Edit Output";
-  let showModal = true;
+  let showModal = false;
 
   // Device Settings State
   let selectedBackend: string;
@@ -110,7 +116,6 @@
 
   async function toggleDevices() {
     editDevices = !editDevices;
-    toggleName = editDevices ? "Edit Output" : "Edit Devices";
     await loadAndSetConfig();
   }
 
@@ -245,6 +250,50 @@
     updateListEdited();
   }
 
+  // File handlers
+
+  async function showError(message: string) {
+    await invoke("plugin:dialog|message", {
+      title: "Error",
+      message,
+      kind: "error",
+    });
+  }
+
+  async function handleSaveToFile() {
+    try {
+      if (editDevices && currentConfig) {
+        await saveConfigToFile(currentConfig);
+      } else if (!editDevices) {
+        // Save the current config directly
+        await saveConfigToFile(await loadConfig());
+      }
+    } catch (error) {
+      await showError(`Error saving config to file: ${error}`);
+      console.error("Error saving config to file:", error);
+    }
+  }
+
+  async function handleLoadFromFile() {
+    try {
+      const loadedConfig = await loadConfigFromFile();
+      if (loadedConfig) {
+        await saveConfig(loadedConfig);
+
+        // Force reset UI state
+        loaded = false;
+        await tick(); // Wait for Svelte to process the state change
+
+        // Reload config and UI
+        loaded = true;
+        await loadAndSetConfig();
+      }
+    } catch (error) {
+      await showError(`Error loading config from file: ${error}`);
+      console.error("Error loading config from file:", error);
+    }
+  }
+
   $: if (originalConfig && selectedBackend) {
     selectedBackend,
       selectedBuffer,
@@ -269,11 +318,13 @@
 
   $: {
     if (loaded) {
-      variant = textEdited || listEdited ? "accent" : "standard";
+      applyButtonVariant = textEdited || listEdited ? "accent" : "standard";
+      infoButtonVariant = $updateAvailable ? "accent" : "standard";
     }
   }
 
   onMount(async () => {
+    await checkVersion();
     let currentWindow = getCurrentWebviewWindow();
     await loadAndSetConfig();
     setTimeout(async () => {
@@ -285,7 +336,7 @@
 {#if loaded}
   <div class="overflow-hidden w-full">
     {#if showModal}
-      <SettingsModal bind:showModal></SettingsModal>
+      <InfoModal bind:showModal></InfoModal>
     {/if}
     <div data-tauri-drag-region class="w-full h-1"></div>
     <div class="flex flex-row w-full justify-center">
@@ -350,41 +401,67 @@
         <div class="flex flex-row justify-between w-full">
           <div class="flex gap-2.5">
             <Button on:click={toggleDevices} class="w-[130px]">
-              <Pen /><span class="pl-1.5">{toggleName}</span>
+              <Pen /><span class="pl-1.5"
+                >{editDevices ? "Edit Output" : "Edit Devices"}</span
+              >
             </Button>
-
-            <Button on:click={toggleModal}>
-              <Settings class="-mx-[5px]" />
-            </Button>
-          </div>
-
-          <div class="flex gap-2.5">
-            <Tooltip text="Save to file">
-              <Button on:click={copyConfig}>
-                <Save />
-              </Button>
-            </Tooltip>
-
-            <Tooltip text="Load from file">
-              <Button on:click={copyConfig}>
-                <Folder />
-              </Button>
-            </Tooltip>
-
-            <Tooltip text="Copy config">
-              <Button on:click={copyConfig}>
-                <Copy />
-              </Button>
-            </Tooltip>
-            <Tooltip text="Apply config">
+            <Tooltip placement="top" offset={10} text="App Info">
               <Button
-                on:click={handleApply}
-                {variant}
+                on:click={toggleModal}
+                variant={infoButtonVariant}
                 --fds-accent-default={$accentColor}
                 --fds-accent-secondary={$accentColor}
                 --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
               >
-                <Checkmark class={variant === "accent" ? "fill-black" : ""} />
+                <Info
+                  class={infoButtonVariant === "accent" ? "fill-black" : ""}
+                />
+                {#if $updateAvailable}
+                  <span class="pl-1.5">Update</span>
+                {/if}
+              </Button>
+            </Tooltip>
+          </div>
+
+          <div class="flex gap-2.5">
+            <Tooltip
+              delay={300}
+              placement="top"
+              offset={10}
+              text="Save to file"
+            >
+              <Button on:click={handleSaveToFile}>
+                <Save />
+              </Button>
+            </Tooltip>
+
+            <Tooltip
+              delay={300}
+              placement="top"
+              offset={10}
+              text="Load from file"
+            >
+              <Button on:click={handleLoadFromFile}>
+                <Folder />
+              </Button>
+            </Tooltip>
+
+            <Tooltip placement="top" offset={10} text="Copy config">
+              <Button on:click={copyConfig}>
+                <Copy />
+              </Button>
+            </Tooltip>
+            <Tooltip placement="top" offset={10} text="Apply config">
+              <Button
+                on:click={handleApply}
+                variant={applyButtonVariant}
+                --fds-accent-default={$accentColor}
+                --fds-accent-secondary={$accentColor}
+                --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+              >
+                <Checkmark
+                  class={applyButtonVariant === "accent" ? "fill-black" : ""}
+                />
                 <span class="pl-1.5 wd:block hidden">Apply</span>
               </Button>
             </Tooltip>

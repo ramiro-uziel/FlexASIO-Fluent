@@ -8,6 +8,9 @@
   import { fly } from "svelte/transition";
   import { expoOut } from "svelte/easing";
   import { Menu, PredefinedMenuItem } from "@tauri-apps/api/menu";
+  import { adjustBrightness } from "$lib/color";
+  import { accentColor } from "$lib/stores";
+  import TomlEditor from "$lib/components/TomlEditor.svelte";
 
   const tomlContent: Writable<string> = writable("");
   let tomlPath: string;
@@ -39,10 +42,10 @@
     textEdited = false;
   }
 
-  function handleTextareaChange(event: Event) {
-    const target = event.target as HTMLTextAreaElement;
-    const newContent = target.value;
-    textEdited = newContent !== originalContent;
+  function handleTextareaChange() {
+    tomlContent.subscribe((newContent) => {
+      textEdited = newContent !== originalContent;
+    })();
   }
 
   async function showContextMenu(event: MouseEvent) {
@@ -66,6 +69,7 @@
     await menu.popup();
   }
 
+  $: selectTextColor = adjustBrightness($accentColor, -50, 0);
   onMount(async () => {
     await getTomlPath();
     readTomlFile();
@@ -78,71 +82,12 @@
 <div
   in:fly={{ x: 0, y: 20, duration: 400, opacity: 0.2, easing: expoOut }}
   class="flex flex-col mt-0 mb-0 select-none items-center overflow-y-scroll overflow-x-hidden gap-2.5 py-2"
-  style="height: calc(100vh - 89px);"
+  style="height: calc(100vh - 98px);"
 >
-  <div class="text-box-container" data-enable-context-menu>
-    <textarea
-      bind:value={$tomlContent}
-      on:input={(e) => handleTextareaChange(e)}
-      on:contextmenu={showContextMenu}
-      spellcheck="false"
-    ></textarea>
-    <div class="text-box-underline" />
-    <slot />
-  </div>
+  <TomlEditor
+    value={tomlContent}
+    onInput={handleTextareaChange}
+    onContextMenu={showContextMenu}
+    {selectTextColor}
+  />
 </div>
-
-<style>
-  .text-box-container {
-    align-items: center;
-    background-clip: padding-box;
-    background-color: var(--fds-control-fill-default);
-    border: 1px solid var(--fds-control-stroke-default);
-    border-radius: var(--fds-control-corner-radius);
-    cursor: text;
-    display: flex;
-    inline-size: 100%;
-    position: relative;
-  }
-  .text-box-container:hover {
-    background-color: var(--fds-control-fill-secondary);
-  }
-  .text-box-container:focus-within {
-    background-color: var(--fds-control-fill-input-active);
-  }
-  .text-box-container:focus-within .text-box-underline:after {
-    border-bottom: 2px solid var(--fds-accent-default);
-  }
-  .text-box-underline {
-    block-size: calc(100% + 2px);
-    border-radius: var(--fds-control-corner-radius);
-    inline-size: calc(100% + 2px);
-    inset-block-start: -1px;
-    inset-inline-start: -1px;
-    overflow: hidden;
-    pointer-events: none;
-    position: absolute;
-  }
-  .text-box-underline:after {
-    block-size: 100%;
-    border-bottom: 1px solid var(--fds-control-strong-stroke-default);
-    box-sizing: border-box;
-    content: "";
-    inline-size: 100%;
-    inset-block-end: 0;
-    inset-inline-start: 0;
-    position: absolute;
-  }
-  .text-box-container > :global(textarea) {
-    border: none;
-    overflow: auto;
-    outline: none;
-    padding: 10px;
-    background-color: transparent;
-    -webkit-box-shadow: none;
-    -moz-box-shadow: none;
-    box-shadow: none;
-    height: calc(100vh - 200px);
-    width: 100%;
-  }
-</style>

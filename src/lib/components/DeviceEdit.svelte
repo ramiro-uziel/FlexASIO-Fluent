@@ -54,30 +54,7 @@
   let isRefreshIndicatorAnimating = false;
   let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  let inputContent: HTMLDivElement;
-  let outputContent: HTMLDivElement;
   let resizeObserver: ResizeObserver;
-
-  function synchronizeHeights() {
-    if (!inputContent || !outputContent || !isWidescreen) return;
-
-    const inputHeight = inputContent.scrollHeight;
-    const outputHeight = outputContent.scrollHeight;
-    const maxHeight = Math.max(inputHeight, outputHeight);
-
-    const adjustedHeight = maxHeight + 15;
-
-    inputContent.style.height = `${adjustedHeight}px`;
-    outputContent.style.height = `${adjustedHeight}px`;
-  }
-
-  $: if (isWidescreen) {
-    synchronizeHeights();
-  }
-
-  $: if ($inputDevices || $outputDevices) {
-    setTimeout(synchronizeHeights, 0);
-  }
 
   const getBackendComboBoxOptions = () =>
     Object.values(AUDIO_BACKENDS).map((b) => {
@@ -103,7 +80,7 @@
   }
 
   function checkScreenWidth() {
-    isWidescreen = window.innerWidth >= 685;
+    isWidescreen = window.innerWidth >= 645; // 685;
   }
 
   function updateDevices(event?: Event) {
@@ -133,24 +110,14 @@
   }
 
   onMount(() => {
-    resizeObserver = new ResizeObserver(() => {
-      if (isWidescreen) {
-        synchronizeHeights();
-      }
-    });
-
-    if (inputContent) resizeObserver.observe(inputContent);
-    if (outputContent) resizeObserver.observe(outputContent);
-
+    resizeObserver = new ResizeObserver(checkScreenWidth);
     checkScreenWidth();
     window.addEventListener("resize", checkScreenWidth);
 
     return () => {
       if (browser) {
         window.removeEventListener("resize", checkScreenWidth);
-        if (resizeObserver) {
-          resizeObserver.disconnect();
-        }
+        resizeObserver.disconnect();
       }
     };
   });
@@ -172,7 +139,7 @@
     easing: expoOut,
   }}
   class="flex flex-col mt-0 mb-0 select-none items-center overflow-scroll"
-  style="height: calc(100vh - 89px);"
+  style="height: calc(100vh - 95px);"
 >
   <div
     class="flex flex-col gap-3 self-center w-full max-w-[1000px] min-w-[300px] rounded-lg"
@@ -244,7 +211,6 @@
           bind:setChannels={inputSetChannels}
           bind:channels={inputChannels}
           bind:devices={$inputDevices}
-          bind:contentRef={inputContent}
           bind:SetModesEnabled={inputSetModesEnabled}
           bind:selectedBackend
           bind:isWidescreen
@@ -262,7 +228,6 @@
           bind:setChannels={outputSetChannels}
           bind:channels={outputChannels}
           bind:devices={$outputDevices}
-          bind:contentRef={outputContent}
           bind:SetModesEnabled={outputSetModesEnabled}
           bind:selectedBackend
           bind:isWidescreen

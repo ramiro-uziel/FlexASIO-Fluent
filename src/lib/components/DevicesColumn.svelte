@@ -10,8 +10,6 @@
     TextBlock,
   } from "fluent-svelte";
 
-  import { onMount } from "svelte";
-
   // Props
   export let expanded: boolean;
   export let setModes: boolean;
@@ -28,7 +26,6 @@
     value: number;
   }>;
   export let selectedBackend: string;
-  export let contentRef: HTMLDivElement;
   export let icon: any;
   export let columnLabel: string;
   export let isWidescreen = false;
@@ -47,33 +44,6 @@
   $: if (channels == 0) {
     setChannels = false;
   }
-
-  let resizeObserver: ResizeObserver;
-
-  function synchronizeHeights() {
-    if (!contentRef) return;
-
-    const contentHeight = contentRef.scrollHeight;
-    contentRef.style.height = `${contentHeight}px`;
-  }
-
-  onMount(() => {
-    if (contentRef) {
-      resizeObserver = new ResizeObserver(() => {
-        if (isWidescreen) {
-          synchronizeHeights();
-        }
-      });
-
-      resizeObserver.observe(contentRef);
-
-      return () => {
-        if (resizeObserver) {
-          resizeObserver.disconnect();
-        }
-      };
-    }
-  });
 </script>
 
 <div class="flex flex-col w-full">
@@ -98,8 +68,9 @@
 
       <svelte:fragment slot="content">
         <div
-          class="flex flex-col w-full gap-2 overflow-scroll"
-          bind:this={contentRef}
+          class="flex flex-col w-full gap-2 overflow-scroll {isWidescreen
+            ? 'h-screen'
+            : ''}"
           style={isWidescreen
             ? selectedBackend === "WASAPI"
               ? "max-height: calc(100vh - 404px);"
@@ -141,7 +112,7 @@
             --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
             on:input={() => (setModes = !setModes)}
             bind:checked={setModes}
-            >Set Modes
+            >Modes
           </Checkbox>
         </div>
         <div class="flex flex-row gap-2">
@@ -184,7 +155,7 @@
           inline={true}
           step={0.1}
           min={0}
-          class="min-w-[163px] max-w-[163px]"
+          class="max-w-[163px]"
           --fds-accent-default={$accentColor}
           --fds-accent-secondary={$accentColor}
           --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
@@ -198,8 +169,7 @@
     style="background-color: var(--fds-card-background-default);"
   >
     <div class="flex flex-row justify-between items-center">
-      <TextBlock variant="bodyStrong" class="w</div>-[90px]">Channels</TextBlock
-      >
+      <TextBlock variant="bodyStrong" class="w-[90px]">Channels</TextBlock>
       <div class="flex flex-row gap-3">
         <Checkbox
           --fds-accent-default={$accentColor}
@@ -213,7 +183,7 @@
           inline={true}
           step={1}
           min={0}
-          class="min-w-[163px] max-w-[163px]"
+          class="max-w-[163px]"
           --fds-accent-default={$accentColor}
           --fds-accent-secondary={$accentColor}
           --fds-accent-tertiary={adjustBrightness($accentColor, -10)}

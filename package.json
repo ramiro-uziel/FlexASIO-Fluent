@@ -1,6 +1,6 @@
 {
   "name": "flexasiofluent",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "",
   "type": "module",
   "scripts": {
@@ -16,8 +16,10 @@
     "@tauri-apps/api": "^2.0.3",
     "@tauri-apps/cli": "^2.0.4",
     "@tauri-apps/plugin-clipboard-manager": "^2.1.0-beta.6",
+    "@tauri-apps/plugin-dialog": "~2",
     "@tauri-apps/plugin-fs": "^2.0.1",
     "@tauri-apps/plugin-os": "2.0.0-beta.7",
+    "@tauri-apps/plugin-shell": "~2",
     "@tauri-apps/plugin-window-state": "^2.0.0",
     "flexasiofluent": "file:",
     "tauri-plugin-window-state-api": "github:tauri-apps/tauri-plugin-window-state#v1"

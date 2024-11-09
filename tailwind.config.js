@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       screens: {
-        'wd': '685px',
+        'wd': '645px',
       },
     },
   },
