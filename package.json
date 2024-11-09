@@ -20,6 +20,7 @@
     "@tauri-apps/plugin-fs": "^2.0.1",
     "@tauri-apps/plugin-os": "2.0.0-beta.7",
     "@tauri-apps/plugin-shell": "~2",
+    "@tauri-apps/plugin-store": "~2",
     "@tauri-apps/plugin-window-state": "^2.0.0",
     "flexasiofluent": "file:",
     "tauri-plugin-window-state-api": "github:tauri-apps/tauri-plugin-window-state#v1"

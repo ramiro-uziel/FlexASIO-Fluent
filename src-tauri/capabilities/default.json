@@ -1,13 +1,9 @@
 {
-  "identifier": "desktop-capability",
+  "identifier": "default",
   "description": "Combined permissions from migrated and desktop capabilities",
   "local": true,
-  "windows": [
-    "main"
-  ],
-  "platforms": [
-    "windows"
-  ],
+  "windows": ["main"],
+  "platforms": ["windows"],
   "permissions": [
     "core:path:default",
     "fs:default",
@@ -33,6 +29,10 @@
     "core:window:allow-show",
     "core:window:allow-start-dragging",
     "core:window:allow-toggle-maximize",
+    "core:window:allow-center",
+    "core:window:allow-set-size",
+    "core:window:allow-set-focus",
+    "core:window:allow-is-maximized",
     "clipboard-manager:default",
     "clipboard-manager:allow-write-text",
     "fs:allow-write-text-file",
@@ -41,7 +41,8 @@
     "shell:allow-open",
     "window-state:default",
     "window-state:allow-restore-state",
-    "shell:default",
-    "dialog:default"
+    "dialog:default",
+    "store:default",
+    "store:default"
   ]
 }

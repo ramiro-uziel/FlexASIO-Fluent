@@ -8,8 +8,6 @@
   import { fly } from "svelte/transition";
   import { expoOut } from "svelte/easing";
   import { Menu, PredefinedMenuItem } from "@tauri-apps/api/menu";
-  import { adjustBrightness } from "$lib/color";
-  import { accentColor } from "$lib/stores";
   import TomlEditor from "$lib/components/TomlEditor.svelte";
 
   const tomlContent: Writable<string> = writable("");
@@ -69,7 +67,6 @@
     await menu.popup();
   }
 
-  $: selectTextColor = adjustBrightness($accentColor, -50, 0);
   onMount(async () => {
     await getTomlPath();
     readTomlFile();
@@ -82,12 +79,11 @@
 <div
   in:fly={{ x: 0, y: 20, duration: 400, opacity: 0.2, easing: expoOut }}
   class="flex flex-col mt-0 mb-0 select-none items-center overflow-y-scroll overflow-x-hidden gap-2.5 py-2"
-  style="height: calc(100vh - 98px);"
+  style="height: calc(100vh - 125px);"
 >
   <TomlEditor
     value={tomlContent}
     onInput={handleTextareaChange}
     onContextMenu={showContextMenu}
-    {selectTextColor}
   />
 </div>

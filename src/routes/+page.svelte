@@ -27,7 +27,14 @@
   import { getDevices, labelDevices } from "$lib/devices";
   import { adjustBrightness } from "$lib/color";
 
-  import { checkVersion, latestVersion, updateAvailable } from "$lib/app";
+  import {
+    inputExpanded,
+    outputExpanded,
+    editDevices,
+    loadUIState,
+  } from "$lib/app";
+
+  import { checkVersion, updateDismissed, updateAvailable } from "$lib/app";
 
   import type { AudioBackend, Config } from "$lib/types";
   import { invoke } from "@tauri-apps/api/core";
@@ -66,7 +73,6 @@
   let currentConfig: Partial<Config> = {};
 
   // UI State
-  let editDevices = true;
   let showModal = false;
 
   // Device Settings State
@@ -74,7 +80,6 @@
   let selectedBuffer: string | number;
 
   // Input Settings
-  let inputExpanded = true;
   let selectedInput = -1;
   let inputSetModes = false;
   let inputExclusive = false;
@@ -85,7 +90,6 @@
   let inputChannels = 0;
 
   // Output Settings
-  let outputExpanded = true;
   let selectedOutput = -1;
   let outputSetModes = false;
   let outputExclusive = false;
@@ -109,18 +113,17 @@
   };
 
   // Event Handlers
-
   async function toggleModal() {
     showModal = !showModal;
   }
 
   async function toggleDevices() {
-    editDevices = !editDevices;
+    $editDevices = !$editDevices;
     await loadAndSetConfig();
   }
 
   async function handleApply() {
-    if (!editDevices) {
+    if (!$editDevices) {
       outputEdit.saveTomlFile();
     } else {
       await saveConfig(currentConfig);
@@ -262,9 +265,9 @@
 
   async function handleSaveToFile() {
     try {
-      if (editDevices && currentConfig) {
+      if ($editDevices && currentConfig) {
         await saveConfigToFile(currentConfig);
-      } else if (!editDevices) {
+      } else if (!$editDevices) {
         // Save the current config directly
         await saveConfigToFile(await loadConfig());
       }
@@ -319,12 +322,14 @@
   $: {
     if (loaded) {
       applyButtonVariant = textEdited || listEdited ? "accent" : "standard";
-      infoButtonVariant = $updateAvailable ? "accent" : "standard";
+      infoButtonVariant =
+        $updateAvailable && !$updateDismissed ? "accent" : "standard";
     }
   }
 
   onMount(async () => {
     await checkVersion();
+    await loadUIState();
     let currentWindow = getCurrentWebviewWindow();
     await loadAndSetConfig();
     setTimeout(async () => {
@@ -335,27 +340,43 @@
 
 {#if loaded}
   <div class="overflow-hidden w-full">
+    <div
+      data-tauri-drag-region
+      class="h-[35px] overflow-hidden select-none z-10"
+    >
+      <div class="pointer-events-none w-full">
+        <div class="flex flex-row items-center align-middle p-2 gap-2 ml-1">
+          <img
+            src="favicon.png"
+            alt="FlexASIO Fluent Icon"
+            class="size-[15px]"
+          />
+          <span class="text-[12px]">FlexASIO Fluent</span>
+        </div>
+      </div>
+    </div>
+
     {#if showModal}
       <InfoModal bind:showModal></InfoModal>
     {/if}
-    <div data-tauri-drag-region class="w-full h-1"></div>
+    <div data-tauri-drag-region class="w-full"></div>
     <div class="flex flex-row w-full justify-center">
       <div class="flex flex-row w-full max-w-[1000px] min-w-[300px]">
-        {#if editDevices}
+        {#if $editDevices}
           <div class="w-full flex justify-center select-none px-3">
             <div class="flex flex-col gap-3 self-center w-full rounded-lg">
               <div class="flex flex-col gap-2">
                 <DeviceEdit
                   {AUDIO_BACKENDS}
                   BufferSize={BUFFER_SIZES}
+                  bind:inputExpanded={$inputExpanded}
+                  bind:outputExpanded={$outputExpanded}
                   bind:selectedBackend
                   bind:selectedBuffer
-                  bind:inputExpanded
                   bind:selectedInput
                   bind:inputSetModes
                   bind:inputExclusive
                   bind:inputAutoconvert
-                  bind:outputExpanded
                   bind:selectedOutput
                   bind:outputSetModes
                   bind:outputExclusive
@@ -396,13 +417,13 @@
       class="rounded-lg flex flex-row w-screen justify-center bottom-0 px-1.5 mb-1 fixed"
     >
       <div
-        class="rounded-lg flex flex-row justify-center w-full p-2 mr-1 max-w-[985px] min-w-[200px]"
+        class="rounded-lg flex flex-row justify-center w-full p-2 mr-1 max-w-[986px]"
       >
         <div class="flex flex-row justify-between w-full">
           <div class="flex gap-2.5">
             <Button on:click={toggleDevices} class="w-[130px]">
               <Pen /><span class="pl-1.5"
-                >{editDevices ? "Edit Output" : "Edit Devices"}</span
+                >{$editDevices ? "Edit Output" : "Edit Devices"}</span
               >
             </Button>
             <Tooltip placement="top" offset={10} text="App Info">
@@ -416,7 +437,7 @@
                 <Info
                   class={infoButtonVariant === "accent" ? "fill-black" : ""}
                 />
-                {#if $updateAvailable}
+                {#if $updateAvailable && !$updateDismissed}
                   <span class="pl-1.5 wd:block hidden">Update</span>
                 {/if}
               </Button>

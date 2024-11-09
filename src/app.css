@@ -4,37 +4,84 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Background color */
 @layer base {
   body {
-    @apply transition-colors duration-100;
+    /* @apply transition-colors duration-100; */
     background-color: transparent;
     color: var(--fds-text-primary);
     fill: var(--fds-text-primary);
   }
 }
-/* width */
+/* Scrollbar styles */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 
-/* Track */
 ::-webkit-scrollbar-track {
   background: transparent;
   border-radius: 5px;
 }
 
-/* Handle */
 ::-webkit-scrollbar-thumb {
   background: #555;
   border-radius: 5px;
 }
 
-/* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
 
 ::-webkit-scrollbar-corner {
   background-color: transparent;
+}
+
+/* Titlebar buttons styles */
+button.decorum-tb-btn {
+  background-color: transparent;
+  color: rgba(0, 0, 0, 0.9);
+}
+
+button#decorum-tb-minimize:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+button#decorum-tb-minimize:active {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+button#decorum-tb-maximize:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+button#decorum-tb-maximize:active {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Dark mode titlebar buttons styles */
+@media (prefers-color-scheme: dark) {
+  button.decorum-tb-btn {
+    color: white;
+  }
+
+  button#decorum-tb-minimize:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+
+  button#decorum-tb-minimize:active {
+    background-color: rgba(255, 255, 255, 0.04);
+  }
+
+  button#decorum-tb-maximize:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+
+  button#decorum-tb-maximize:active {
+    background-color: rgba(255, 255, 255, 0.04);
+  }
+
+  button#decorum-tb-close {
+    color: white;
+  }
 }

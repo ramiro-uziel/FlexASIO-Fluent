@@ -33,6 +33,8 @@ toml = "0.8.16"
 rust_decimal = "1.35.0"
 tauri-plugin-clipboard-manager = "2.0.0-rc.0"
 tauri-plugin-dialog = "2"
+tauri-plugin-decorum = "1.1.1"
+tauri-plugin-store = "2"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem and the built-in dev server is disabled.

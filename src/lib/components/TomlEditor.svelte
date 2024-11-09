@@ -3,12 +3,14 @@
   import Prism from "prismjs";
   import "prismjs/components/prism-toml";
   import type { Writable } from "svelte/store";
+  import { adjustBrightness } from "$lib/color";
+  import { accentColor } from "$lib/stores";
 
   export let value: Writable<string>;
   export let onInput: (event: Event) => void;
   export let onContextMenu: (event: MouseEvent) => void;
-  export let selectTextColor: string;
 
+  let selectTextColor: string;
   let textarea: HTMLTextAreaElement;
   let highlighter: HTMLPreElement;
   let currentValue = "";
@@ -37,6 +39,9 @@
     syncHighlight();
   }
 
+  $: selectTextColor = adjustBrightness($accentColor, -50, 0);
+  $: selectTextColorLight = adjustBrightness($accentColor, 10, -60);
+
   onMount(() => {
     syncHighlight();
     textarea.addEventListener("scroll", syncScroll);
@@ -57,7 +62,7 @@
     on:contextmenu={onContextMenu}
     spellcheck="false"
     class="editor font-mono font-normal"
-    style="--select-color: {selectTextColor}"
+    style="--select-color: {selectTextColor}; --select-color-light: {selectTextColorLight};"
     rows="1"
   ></textarea>
 </div>
@@ -120,6 +125,13 @@
     color: var(--fds-text-primary);
   }
 
+  @media (prefers-color-scheme: light) {
+    .editor::selection {
+      background-color: var(--select-color-light);
+      color: var(--fds-text-primary);
+    }
+  }
+
   :global(.token.comment) {
     color: #6a9955;
   }
@@ -140,5 +152,29 @@
   }
   :global(.token.operator) {
     color: #d4d4d4;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :global(.token.comment) {
+      color: #008000;
+    }
+    :global(.token.property) {
+      color: #0000ff;
+    }
+    :global(.token.string) {
+      color: #a31515;
+    }
+    :global(.token.number) {
+      color: #098658;
+    }
+    :global(.token.boolean) {
+      color: #0000ff;
+    }
+    :global(.token.punctuation) {
+      color: #000000;
+    }
+    :global(.token.operator) {
+      color: #000000;
+    }
   }
 </style>

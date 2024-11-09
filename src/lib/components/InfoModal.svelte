@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { Button } from "fluent-svelte";
+  import { Button, Tooltip } from "fluent-svelte";
   import { adjustBrightness } from "$lib/color";
   import { accentColor } from "$lib/stores";
   import { expoOut } from "svelte/easing";
@@ -8,10 +8,15 @@
   import { invoke } from "@tauri-apps/api/core";
   import { open } from "@tauri-apps/plugin-shell";
   import { getVersion } from "@tauri-apps/api/app";
-  import { checkVersion, latestVersion, updateAvailable } from "$lib/app";
+  import {
+    checkVersion,
+    latestVersion,
+    updateAvailable,
+    setUpdateDismissed,
+    updateDismissed,
+  } from "$lib/app";
 
-  import Alert from "@fluentui/svg-icons/icons/error_circle_16_regular.svg?component";
-  import Dismiss from "@fluentui/svg-icons/icons/dismiss_circle_20_regular.svg?component";
+  import DismissCircle from "@fluentui/svg-icons/icons/dismiss_circle_20_regular.svg?component";
 
   export let showModal = false;
 
@@ -36,6 +41,10 @@
   const UPDATE_URL =
     "https://github.com/ramiro-uziel/FlexASIO-Fluent/releases/latest";
 
+  function handleDismissUpdate() {
+    setUpdateDismissed(!$updateDismissed);
+  }
+
   onMount(() => {
     invoke("get_dll_product_version").then((version: unknown) => {
       dllProductVersion = (version as string).split(" ")[0];
@@ -56,13 +65,17 @@
 </script>
 
 <button
-  class="fixed bg-black inset-0 bg-opacity-30 flex items-center justify-center z-50 cursor-default"
+  class="fixed bg-black inset-0 bg-opacity-50 flex items-center justify-center z-50 cursor-default"
   on:click={() => (showModal = false)}
   transition:fade={{ duration: 200, easing: expoOut }}
 >
   <button
-    class="p-6 rounded-lg shadow-2xl shadow-black/50 cursor-default border border-white border-opacity-10 -translate-y-3"
-    style="background-color: {adjustBrightness($accentColor, -92, -5)}; "
+    class="modal p-6 rounded-lg shadow-2xl shadow-black/50 cursor-default border border-white border-opacity-10"
+    style="--modal-light: {adjustBrightness(
+      $accentColor,
+      900,
+      -90
+    )}; --modal-dark: {adjustBrightness($accentColor, -92, -5)};"
     on:click|stopPropagation
     in:fly={{
       x: 0,
@@ -86,12 +99,11 @@
           <p class="text-sm">
             v{appVersion}
             {#if dllProductVersion}
-              for {dllProductVersion}
+              - {dllProductVersion}
             {/if}
           </p>
         </div>
         <div class="space-x-1">
-          <!-- <Button class="h-8" on:click={() => open(ISSUE_URL)}>Docs</Button> -->
           <Button class="h-8" on:click={() => open(ISSUE_URL)}
             >Report Issue</Button
           >
@@ -127,7 +139,9 @@
       {#if $updateAvailable}
         <div
           class="flex flex-row justify-between items-center p-4 rounded-md"
-          style="background-color: {adjustBrightness($accentColor, -51, 130)};"
+          style="background-color: {$updateDismissed
+            ? 'var(--fds-card-background-default)'
+            : adjustBrightness($accentColor, -51, 130)};"
         >
           <div class="text-left">
             <p class="font-medium text-sm">Update available</p>
@@ -135,8 +149,22 @@
               Version {$latestVersion} is available
             </p>
           </div>
-          <Button class="h-8" on:click={() => open(UPDATE_URL)}>Download</Button
-          >
+          <div class="flex items-center justify-center space-x-3">
+            <Tooltip
+              text="Toggle update notification"
+              placement="left"
+              offset={75}
+              delay={0}
+            >
+              <button
+                class="h-8 opacity-40 hover:opacity-100 transition-opacity duration-100 translate-y-0.5"
+                on:click={() => handleDismissUpdate()}><DismissCircle /></button
+              >
+            </Tooltip>
+            <Button class="h-8" on:click={() => open(UPDATE_URL)}
+              >Download</Button
+            >
+          </div>
         </div>
       {/if}
 
@@ -144,3 +172,15 @@
     </div>
   </button>
 </button>
+
+<style>
+  .modal {
+    background-color: var(--modal-light);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .modal {
+      background-color: var(--modal-dark);
+    }
+  }
+</style>

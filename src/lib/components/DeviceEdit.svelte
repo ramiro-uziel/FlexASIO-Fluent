@@ -139,7 +139,7 @@
     easing: expoOut,
   }}
   class="flex flex-col mt-0 mb-0 select-none items-center overflow-scroll"
-  style="height: calc(100vh - 95px);"
+  style="height: calc(100vh - 130px);"
 >
   <div
     class="flex flex-col gap-3 self-center w-full max-w-[1000px] min-w-[300px] rounded-lg"

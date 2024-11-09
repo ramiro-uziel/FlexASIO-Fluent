@@ -69,11 +69,11 @@
       <svelte:fragment slot="content">
         <div
           class="flex flex-col w-full gap-2 overflow-scroll {isWidescreen
-            ? 'h-screen'
+            ? 'h-[calc(100vh)]'
             : ''}"
           style={isWidescreen
             ? selectedBackend === "WASAPI"
-              ? "max-height: calc(100vh - 404px);"
+              ? "max-height: calc(100vh - 435px);"
               : "max-height: calc(100vh - 350px);"
             : ""}
         >
