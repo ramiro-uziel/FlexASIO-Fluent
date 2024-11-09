@@ -1,13 +1,9 @@
-// src/lib/versionChecker.ts
-
 import { writable } from "svelte/store";
 import { getVersion } from "@tauri-apps/api/app";
 
-// Create stores for update status and latest version
 export const updateAvailable = writable(false);
 export const latestVersion = writable<string | null>(null);
 
-// Version checking configuration
 const GITHUB_OWNER = "ramiro-uziel";
 const GITHUB_REPO = "FlexASIO-Fluent";
 
@@ -46,12 +42,10 @@ export async function checkVersion() {
     const latestRelease = await response.json();
     const githubVersion = latestRelease.tag_name.replace("v", "");
 
-    // Update the latest version store
     latestVersion.set(githubVersion);
 
-    // Only set updateAvailable to true if current version is lower than latest
     const comparison = compareVersions(currentVersion, githubVersion);
-    updateAvailable.set(comparison > 0);
+    updateAvailable.set(comparison < 0);
   } catch (error) {
     console.error("Error checking version:", error);
     latestVersion.set(null);

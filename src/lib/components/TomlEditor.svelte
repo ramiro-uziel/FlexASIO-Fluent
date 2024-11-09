@@ -48,10 +48,8 @@
 </script>
 
 <div class="text-box-container" data-enable-context-menu>
-  <!-- Non-editable layer for syntax highlighting -->
   <pre bind:this={highlighter} class="highlighter" aria-hidden="true"></pre>
 
-  <!-- Editable textarea -->
   <textarea
     bind:this={textarea}
     bind:value={$value}
@@ -71,7 +69,6 @@
     inline-size: 100%;
     align-items: stretch;
     background-clip: padding-box;
-    /* background-color: var(--fds-control-fill-default); */
     background-color: var(--fds-control-fill-input-active);
     border: 1px solid var(--fds-control-stroke-default);
     border-radius: var(--fds-control-corner-radius);
@@ -79,14 +76,6 @@
     height: 800px;
   }
 
-  /* .text-box-container:hover {
-    background-color: var(--fds-control-fill-secondary);
-  }
-
-  .text-box-container:focus-within {
-    background-color: var(--fds-control-fill-input-active);
-  }
- */
   .text-box-container > :global(textarea) {
     border: none;
     overflow: auto;

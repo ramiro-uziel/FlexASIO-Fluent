@@ -1,17 +1,14 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { onMount, onDestroy } from "svelte";
-  import { getVersion } from "@tauri-apps/api/app";
   import {
     WebviewWindow,
     getCurrentWebviewWindow,
   } from "@tauri-apps/api/webviewWindow";
   import { ready, accentColor } from "$lib/stores";
   import { adjustBrightness } from "$lib/color";
-  import { writable } from "svelte/store";
   import "../app.css";
 
-  // Window
   let currentWindow: WebviewWindow;
   let unlisten: (() => void) | undefined;
 
@@ -19,7 +16,6 @@
     currentWindow.show();
   }
 
-  // Theme
   function updateDarkMode(theme: string): void {
     document.documentElement.classList.toggle("dark", theme === "dark");
   }
@@ -36,7 +32,6 @@
     }
   }
 
-  // Disabling context menu and specific keys
   const isTauriLocalhost = (): boolean =>
     window.location.hostname === "tauri.localhost";
 
@@ -86,7 +81,6 @@
     }
   };
 
-  // Init
   async function initializeApp() {
     currentWindow = getCurrentWebviewWindow();
 
