@@ -52,8 +52,6 @@ export async function checkVersion() {
     // Only set updateAvailable to true if current version is lower than latest
     const comparison = compareVersions(currentVersion, githubVersion);
     updateAvailable.set(comparison > 0);
-
-    console.log(`Current version: ${currentVersion}, Latest: ${githubVersion}`);
   } catch (error) {
     console.error("Error checking version:", error);
     latestVersion.set(null);

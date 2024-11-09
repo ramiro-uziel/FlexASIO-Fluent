@@ -417,7 +417,7 @@
                   class={infoButtonVariant === "accent" ? "fill-black" : ""}
                 />
                 {#if $updateAvailable}
-                  <span class="pl-1.5">Update</span>
+                  <span class="pl-1.5 wd:block hidden">Update</span>
                 {/if}
               </Button>
             </Tooltip>
