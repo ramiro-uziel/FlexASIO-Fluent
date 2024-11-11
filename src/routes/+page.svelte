@@ -254,7 +254,6 @@
   }
 
   // File handlers
-
   async function showError(message: string) {
     await invoke("plugin:dialog|message", {
       title: "Error",
@@ -268,7 +267,6 @@
       if ($editDevices && currentConfig) {
         await saveConfigToFile(currentConfig);
       } else if (!$editDevices) {
-        // Save the current config directly
         await saveConfigToFile(await loadConfig());
       }
     } catch (error) {
@@ -283,11 +281,9 @@
       if (loadedConfig) {
         await saveConfig(loadedConfig);
 
-        // Force reset UI state
         loaded = false;
-        await tick(); // Wait for Svelte to process the state change
+        await tick();
 
-        // Reload config and UI
         loaded = true;
         await loadAndSetConfig();
       }
@@ -412,7 +408,6 @@
       </div>
     </div>
 
-    <!-- Bottom Action Bar -->
     <div
       class="rounded-lg flex flex-row w-screen justify-center bottom-0 px-1.5 mb-1 fixed"
     >
@@ -474,7 +469,12 @@
                 <Copy />
               </Button>
             </Tooltip>
-            <Tooltip placement="top" offset={10} text="Apply config">
+            <Tooltip
+              delay={300}
+              placement="top"
+              offset={10}
+              text="Apply config"
+            >
               <Button
                 on:click={handleApply}
                 variant={applyButtonVariant}
