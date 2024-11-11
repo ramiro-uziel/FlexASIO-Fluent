@@ -2,8 +2,8 @@
 GUI for [FlexASIO](https://github.com/dechamps/FlexASIO) TOML configuration files.
 
 <p align="center" >
-  <img src="https://github.com/user-attachments/assets/7afa7468-b53c-41c5-a116-28dfc2490f12" width="300" title="Screenshot" alt="Application screenshot"/>
-  <img src="https://github.com/user-attachments/assets/f2bbc16e-6da4-4519-b7dc-98610af54c82" width="300" title="Screenshot" alt="Application screenshot"/>
+  <img src="https://github.com/user-attachments/assets/7afa7468-b53c-41c5-a116-28dfc2490f12" width="400" title="Screenshot" alt="Application screenshot"/>
+  <img src="https://github.com/user-attachments/assets/f2bbc16e-6da4-4519-b7dc-98610af54c82" width="400" title="Screenshot" alt="Application screenshot"/>
 </p>
 
 ### Download
