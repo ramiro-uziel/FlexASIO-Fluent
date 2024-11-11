@@ -74,7 +74,7 @@
           style={isWidescreen
             ? selectedBackend === "WASAPI"
               ? "max-height: calc(100vh - 435px);"
-              : "max-height: calc(100vh - 350px);"
+              : "max-height: calc(100vh - 381px);"
             : ""}
         >
           {#each devices as { label, device, value }}

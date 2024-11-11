@@ -417,7 +417,7 @@
       class="rounded-lg flex flex-row w-screen justify-center bottom-0 px-1.5 mb-1 fixed"
     >
       <div
-        class="rounded-lg flex flex-row justify-center w-full p-2 mr-1 max-w-[986px]"
+        class="rounded-lg flex flex-row justify-center w-full p-2 mr-[4px] -ml-[1px] max-w-[985px]"
       >
         <div class="flex flex-row justify-between w-full">
           <div class="flex gap-2.5">
@@ -435,7 +435,9 @@
                 --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
               >
                 <Info
-                  class={infoButtonVariant === "accent" ? "fill-black" : ""}
+                  class={infoButtonVariant === "accent"
+                    ? "fill-white dark:fill-black"
+                    : ""}
                 />
                 {#if $updateAvailable && !$updateDismissed}
                   <span class="pl-1.5 wd:block hidden">Update</span>
@@ -481,7 +483,9 @@
                 --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
               >
                 <Checkmark
-                  class={applyButtonVariant === "accent" ? "fill-black" : ""}
+                  class={applyButtonVariant === "accent"
+                    ? "fill-white dark:fill-black"
+                    : ""}
                 />
                 <span class="pl-1.5 wd:block hidden">Apply</span>
               </Button>

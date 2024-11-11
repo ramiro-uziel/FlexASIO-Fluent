@@ -138,14 +138,22 @@
 
       {#if $updateAvailable}
         <div
-          class="flex flex-row justify-between items-center p-4 rounded-md"
-          style="background-color: {$updateDismissed
+          class="flex flex-row justify-between items-center p-4 rounded-md accent-card"
+          style="--accent-card-light: {$updateDismissed
             ? 'var(--fds-card-background-default)'
-            : adjustBrightness($accentColor, -51, 130)};"
+            : adjustBrightness($accentColor, 50, -30)};
+            
+            --accent-card-dark: {$updateDismissed
+            ? 'var(--fds-card-background-default)'
+            : adjustBrightness($accentColor, -40, 130)};"
         >
           <div class="text-left">
             <p class="font-medium text-sm">Update available</p>
-            <p class="text-sm text-gray-400">
+            <p
+              class="text-sm {$updateDismissed
+                ? 'text-gray-400'
+                : 'dark:text-white text-black'}"
+            >
               Version {$latestVersion} is available
             </p>
           </div>
@@ -181,6 +189,16 @@
   @media (prefers-color-scheme: dark) {
     .modal {
       background-color: var(--modal-dark);
+    }
+  }
+
+  .accent-card {
+    background-color: var(--accent-card-light);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .accent-card {
+      background-color: var(--accent-card-dark);
     }
   }
 </style>
