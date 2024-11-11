@@ -1,8 +1,9 @@
 # FlexASIO Fluent
 GUI for [FlexASIO](https://github.com/dechamps/FlexASIO) TOML configuration files.
 
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/89980704-0e99-4f0e-96af-4744209ec017" width="700" title="Screenshot" alt="Application screenshot"/>
+<p align="center" >
+  <img src="https://github.com/user-attachments/assets/7afa7468-b53c-41c5-a116-28dfc2490f12" width="500" title="Screenshot" alt="Application screenshot"/>
+  <img src="https://github.com/user-attachments/assets/f2bbc16e-6da4-4519-b7dc-98610af54c82" width="500" title="Screenshot" alt="Application screenshot"/>
 </p>
 
 ### Download
