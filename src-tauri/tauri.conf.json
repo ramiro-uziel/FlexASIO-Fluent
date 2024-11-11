@@ -28,7 +28,7 @@
     "shortDescription": "FlexASIO Fluent"
   },
   "productName": "FlexASIO Fluent",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "identifier": "com.FlexASIOFluent.dev",
   "plugins": {},
   "app": {
@@ -41,12 +41,12 @@
         "minWidth": 450,
         "minHeight": 405,
         "transparent": true,
-        "decorations": true,
         "visible": false,
         "windowEffects": {
           "effects": ["mica"]
         }
       }
-    ]
+    ],
+    "withGlobalTauri": true
   }
 }

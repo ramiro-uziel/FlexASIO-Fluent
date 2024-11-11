@@ -5,19 +5,18 @@
     WebviewWindow,
     getCurrentWebviewWindow,
   } from "@tauri-apps/api/webviewWindow";
-  import { ready, accentColor } from "$lib/stores";
+  import { ready, accentColor, isWidescreen } from "$lib/stores";
   import { adjustBrightness } from "$lib/color";
   import "../app.css";
 
-  // Window
   let currentWindow: WebviewWindow;
   let unlisten: (() => void) | undefined;
+  let resizeObserver: ResizeObserver;
 
   function initWindow() {
     currentWindow.show();
   }
 
-  // Theme
   function updateDarkMode(theme: string): void {
     document.documentElement.classList.toggle("dark", theme === "dark");
   }
@@ -34,18 +33,10 @@
     }
   }
 
-  async function logDllVersion() {
-    try {
-      const version = await invoke("get_dll_product_version", {
-        filePath: "C:\\Program Files\\FlexASIO\\x64\\FlexASIO.dll",
-      });
-      console.log("Product Version:", version);
-    } catch (error) {
-      console.error("Error getting version:", error);
-    }
+  function checkScreenWidth() {
+    isWidescreen.set(window.innerWidth >= 645);
   }
 
-  // Disabling context menu and specific keys
   const isTauriLocalhost = (): boolean =>
     window.location.hostname === "tauri.localhost";
 
@@ -82,6 +73,11 @@
         capture: true,
       });
     }
+
+    resizeObserver = new ResizeObserver(checkScreenWidth);
+    resizeObserver.observe(document.documentElement);
+
+    checkScreenWidth();
   };
 
   const removeEventListeners = (): void => {
@@ -93,9 +89,12 @@
         capture: true,
       });
     }
+
+    if (resizeObserver) {
+      resizeObserver.disconnect();
+    }
   };
 
-  // Init
   async function initializeApp() {
     currentWindow = getCurrentWebviewWindow();
 

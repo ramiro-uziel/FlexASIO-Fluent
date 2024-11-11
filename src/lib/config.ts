@@ -36,6 +36,30 @@ export async function loadConfig(): Promise<Config> {
   }
 }
 
+export async function saveConfigToFile(config: Partial<Config>) {
+  try {
+    await invoke("save_config_to_file", { config });
+  } catch (error) {
+    if (error !== "Save operation cancelled") {
+      console.error("Failed to save config to file:", error);
+      throw error;
+    }
+  }
+}
+
+export async function loadConfigFromFile(): Promise<Config | null> {
+  try {
+    const config = await invoke<Config>("load_config_from_file");
+    return config;
+  } catch (error) {
+    if (error !== "Load operation cancelled") {
+      console.error("Failed to load config from file:", error);
+      throw error;
+    }
+    return null;
+  }
+}
+
 export async function saveConfig(config: Partial<Config>) {
   try {
     const tomlPath = await getTomlPath();

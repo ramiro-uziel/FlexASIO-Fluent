@@ -1,25 +1,48 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { get } from "svelte/store";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { Button, Tooltip } from "fluent-svelte";
-  import { adjustBrightness } from "$lib/color";
+
   import Checkmark from "@fluentui/svg-icons/icons/checkmark_20_regular.svg?component";
   import Copy from "@fluentui/svg-icons/icons/copy_20_regular.svg?component";
   import Pen from "@fluentui/svg-icons/icons/edit_20_regular.svg?component";
+  import Info from "@fluentui/svg-icons/icons/info_20_regular.svg?component";
+  import Save from "@fluentui/svg-icons/icons/save_20_regular.svg?component";
+  import Folder from "@fluentui/svg-icons/icons/folder_20_regular.svg?component";
 
   import OutputEdit from "$lib/components/OutputEdit.svelte";
   import DeviceEdit from "$lib/components/DeviceEdit.svelte";
+  import InfoModal from "$lib/components/InfoModal.svelte";
 
-  import { inputDevices, outputDevices, accentColor } from "$lib/stores";
-  import { getDevices, labelDevices } from "$lib/devices";
   import {
     loadConfig,
     saveConfig,
     copyConfig,
     compareConfigs,
+    saveConfigToFile,
+    loadConfigFromFile,
   } from "$lib/config";
+  import {
+    inputDevices,
+    outputDevices,
+    accentColor,
+    isWidescreen,
+  } from "$lib/stores";
+  import { getDevices, labelDevices } from "$lib/devices";
+  import { adjustBrightness } from "$lib/color";
+
+  import {
+    inputExpanded,
+    outputExpanded,
+    editDevices,
+    loadUIState,
+  } from "$lib/app";
+
+  import { checkVersion, updateDismissed, updateAvailable } from "$lib/app";
+
   import type { AudioBackend, Config } from "$lib/types";
+  import { invoke } from "@tauri-apps/api/core";
 
   const AUDIO_BACKENDS: { [key: string]: AudioBackend } = {
     MME: { value: "MME", displayName: "MME" },
@@ -45,22 +68,23 @@
   let loaded = false;
   let textEdited = false;
   let listEdited = false;
-  let variant: "accent" | "standard" | "hyperlink" | undefined = "standard";
+  let applyButtonVariant: "accent" | "standard" | "hyperlink" | undefined =
+    "standard";
+  let infoButtonVariant: "accent" | "standard" | "hyperlink" | undefined =
+    "standard";
 
   // Config State
   let originalConfig: Config | null = null;
   let currentConfig: Partial<Config> = {};
 
   // UI State
-  let editDevices = true;
-  let toggleName = "Edit Output";
+  let showModal = false;
 
   // Device Settings State
   let selectedBackend: string;
   let selectedBuffer: string | number;
 
   // Input Settings
-  let inputExpanded = true;
   let selectedInput = -1;
   let inputSetModes = false;
   let inputExclusive = false;
@@ -71,7 +95,6 @@
   let inputChannels = 0;
 
   // Output Settings
-  let outputExpanded = true;
   let selectedOutput = -1;
   let outputSetModes = false;
   let outputExclusive = false;
@@ -95,14 +118,17 @@
   };
 
   // Event Handlers
+  async function toggleModal() {
+    showModal = !showModal;
+  }
+
   async function toggleDevices() {
-    editDevices = !editDevices;
-    toggleName = editDevices ? "Edit Output" : "Edit Devices";
+    $editDevices = !$editDevices;
     await loadAndSetConfig();
   }
 
   async function handleApply() {
-    if (!editDevices) {
+    if (!$editDevices) {
       outputEdit.saveTomlFile();
     } else {
       await saveConfig(currentConfig);
@@ -232,6 +258,46 @@
     updateListEdited();
   }
 
+  // File handlers
+  async function showError(message: string) {
+    await invoke("plugin:dialog|message", {
+      title: "Error",
+      message,
+      kind: "error",
+    });
+  }
+
+  async function handleSaveToFile() {
+    try {
+      if ($editDevices && currentConfig) {
+        await saveConfigToFile(currentConfig);
+      } else if (!$editDevices) {
+        await saveConfigToFile(await loadConfig());
+      }
+    } catch (error) {
+      await showError(`Error saving config to file: ${error}`);
+      console.error("Error saving config to file:", error);
+    }
+  }
+
+  async function handleLoadFromFile() {
+    try {
+      const loadedConfig = await loadConfigFromFile();
+      if (loadedConfig) {
+        await saveConfig(loadedConfig);
+
+        loaded = false;
+        await tick();
+
+        loaded = true;
+        await loadAndSetConfig();
+      }
+    } catch (error) {
+      await showError(`Error loading config from file: ${error}`);
+      console.error("Error loading config from file:", error);
+    }
+  }
+
   $: if (originalConfig && selectedBackend) {
     selectedBackend,
       selectedBuffer,
@@ -256,11 +322,15 @@
 
   $: {
     if (loaded) {
-      variant = textEdited || listEdited ? "accent" : "standard";
+      applyButtonVariant = textEdited || listEdited ? "accent" : "standard";
+      infoButtonVariant =
+        $updateAvailable && !$updateDismissed ? "accent" : "standard";
     }
   }
 
   onMount(async () => {
+    await checkVersion();
+    await loadUIState();
     let currentWindow = getCurrentWebviewWindow();
     await loadAndSetConfig();
     setTimeout(async () => {
@@ -271,24 +341,43 @@
 
 {#if loaded}
   <div class="overflow-hidden w-full">
-    <div data-tauri-drag-region class="w-full h-1"></div>
+    <div
+      data-tauri-drag-region
+      class="h-[35px] overflow-hidden select-none z-10"
+    >
+      <div class="pointer-events-none w-full">
+        <div class="flex flex-row items-center align-middle p-2 gap-2 ml-1">
+          <img
+            src="favicon.png"
+            alt="FlexASIO Fluent Icon"
+            class="size-[15px]"
+          />
+          <span class="text-[12px]">FlexASIO Fluent</span>
+        </div>
+      </div>
+    </div>
+
+    {#if showModal}
+      <InfoModal bind:showModal></InfoModal>
+    {/if}
+    <div data-tauri-drag-region class="w-full"></div>
     <div class="flex flex-row w-full justify-center">
       <div class="flex flex-row w-full max-w-[1000px] min-w-[300px]">
-        {#if editDevices}
+        {#if $editDevices}
           <div class="w-full flex justify-center select-none px-3">
             <div class="flex flex-col gap-3 self-center w-full rounded-lg">
               <div class="flex flex-col gap-2">
                 <DeviceEdit
                   {AUDIO_BACKENDS}
                   BufferSize={BUFFER_SIZES}
+                  bind:inputExpanded={$inputExpanded}
+                  bind:outputExpanded={$outputExpanded}
                   bind:selectedBackend
                   bind:selectedBuffer
-                  bind:inputExpanded
                   bind:selectedInput
                   bind:inputSetModes
                   bind:inputExclusive
                   bind:inputAutoconvert
-                  bind:outputExpanded
                   bind:selectedOutput
                   bind:outputSetModes
                   bind:outputExclusive
@@ -324,35 +413,87 @@
       </div>
     </div>
 
-    <!-- Bottom Action Bar -->
     <div
       class="rounded-lg flex flex-row w-screen justify-center bottom-0 px-1.5 mb-1 fixed"
     >
       <div
-        class="rounded-lg flex flex-row justify-center w-full p-2 mr-1 max-w-[985px] min-w-[200px]"
+        class="rounded-lg flex flex-row justify-center w-full p-2 mr-[4px] -ml-[1px] max-w-[985px]"
       >
         <div class="flex flex-row justify-between w-full">
           <div class="flex gap-2.5">
-            <Button on:click={toggleDevices}>
-              <Pen /><span class="pl-1.5">{toggleName}</span>
+            <Button on:click={toggleDevices} class="w-[130px]">
+              <Pen /><span class="pl-1.5"
+                >{$editDevices ? "Edit Output" : "Edit Devices"}</span
+              >
             </Button>
-          </div>
-          <div class="flex gap-2.5">
-            <Tooltip text="Copy the config">
-              <Button on:click={copyConfig}>
-                <Copy /><span class="pl-1.5">Copy</span>
-              </Button>
-            </Tooltip>
-            <Tooltip text="Apply the config" alignment="end" offset={5}>
+            <Tooltip delay={300} placement="top" offset={10} text="App Info">
               <Button
-                on:click={handleApply}
-                {variant}
+                on:click={toggleModal}
+                variant={infoButtonVariant}
                 --fds-accent-default={$accentColor}
                 --fds-accent-secondary={$accentColor}
                 --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
               >
-                <Checkmark class={variant === "accent" ? "fill-black" : ""} />
-                <span class="pl-1.5">Apply</span>
+                <Info
+                  class={infoButtonVariant === "accent"
+                    ? "fill-white dark:fill-black"
+                    : ""}
+                />
+                {#if $updateAvailable && !$updateDismissed}
+                  <span class="pl-1.5 wd:block hidden">Update</span>
+                {/if}
+              </Button>
+            </Tooltip>
+          </div>
+
+          <div class="flex gap-2.5">
+            <Tooltip
+              delay={300}
+              placement="top"
+              offset={10}
+              text="Save to file"
+            >
+              <Button on:click={handleSaveToFile}>
+                <Save />
+              </Button>
+            </Tooltip>
+
+            <Tooltip
+              delay={300}
+              placement="top"
+              offset={10}
+              text="Load from file"
+            >
+              <Button on:click={handleLoadFromFile}>
+                <Folder />
+              </Button>
+            </Tooltip>
+
+            <Tooltip delay={300} placement="top" offset={10} text="Copy config">
+              <Button on:click={copyConfig}>
+                <Copy />
+              </Button>
+            </Tooltip>
+            <Tooltip
+              delay={$isWidescreen ? 1000 : 300}
+              placement="top"
+              offset={10}
+              text="Apply config"
+            >
+              <Button
+                on:click={handleApply}
+                variant={applyButtonVariant}
+                --fds-accent-default={$accentColor}
+                --fds-accent-secondary={$accentColor}
+                --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+                class="wd:w-full w-[63px]"
+              >
+                <Checkmark
+                  class={applyButtonVariant === "accent"
+                    ? "fill-white dark:fill-black"
+                    : ""}
+                />
+                <span class="pl-1.5 wd:block hidden">Apply</span>
               </Button>
             </Tooltip>
           </div>
