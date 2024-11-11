@@ -1,11 +1,15 @@
 <script lang="ts">
   import DevicesColumn from "./DevicesColumn.svelte";
 
-  import { onMount, createEventDispatcher } from "svelte";
+  import { createEventDispatcher } from "svelte";
   import { fly } from "svelte/transition";
   import { expoOut } from "svelte/easing";
-  import { browser } from "$app/environment";
-  import { accentColor, inputDevices, outputDevices } from "$lib/stores";
+  import {
+    accentColor,
+    inputDevices,
+    outputDevices,
+    isWidescreen,
+  } from "$lib/stores";
 
   import { Button, ComboBox, TextBlock, Tooltip } from "fluent-svelte";
 
@@ -48,13 +52,10 @@
   )[];
 
   const dispatch = createEventDispatcher();
-  let isWidescreen = false;
   let inputSetModesEnabled: boolean;
   let outputSetModesEnabled: boolean;
   let isRefreshIndicatorAnimating = false;
   let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
-
-  let resizeObserver: ResizeObserver;
 
   const getBackendComboBoxOptions = () =>
     Object.values(AUDIO_BACKENDS).map((b) => {
@@ -77,10 +78,6 @@
       const numValue = parseInt(inputValue, 10);
       selectedBuffer = !isNaN(numValue) ? numValue.toString() : inputValue;
     }
-  }
-
-  function checkScreenWidth() {
-    isWidescreen = window.innerWidth >= 645; // 685;
   }
 
   function updateDevices(event?: Event) {
@@ -108,19 +105,6 @@
     dispatch("refreshDevices");
     refreshAnimation();
   }
-
-  onMount(() => {
-    resizeObserver = new ResizeObserver(checkScreenWidth);
-    checkScreenWidth();
-    window.addEventListener("resize", checkScreenWidth);
-
-    return () => {
-      if (browser) {
-        window.removeEventListener("resize", checkScreenWidth);
-        resizeObserver.disconnect();
-      }
-    };
-  });
 </script>
 
 <div
@@ -196,7 +180,7 @@
         </div>
       </div>
       <div
-        class={`flex rounded-b-lg ${isWidescreen ? "flex-row gap-2" : "flex-col gap-5"}`}
+        class={`flex rounded-b-lg ${$isWidescreen ? "flex-row gap-2" : "flex-col gap-5"}`}
       >
         <DevicesColumn
           columnLabel="Input"
@@ -213,7 +197,7 @@
           bind:devices={$inputDevices}
           bind:SetModesEnabled={inputSetModesEnabled}
           bind:selectedBackend
-          bind:isWidescreen
+          bind:isWidescreen={$isWidescreen}
         ></DevicesColumn>
         <DevicesColumn
           columnLabel="Output"
@@ -230,7 +214,7 @@
           bind:devices={$outputDevices}
           bind:SetModesEnabled={outputSetModesEnabled}
           bind:selectedBackend
-          bind:isWidescreen
+          bind:isWidescreen={$isWidescreen}
         ></DevicesColumn>
       </div>
     </div>

@@ -23,7 +23,12 @@
     saveConfigToFile,
     loadConfigFromFile,
   } from "$lib/config";
-  import { inputDevices, outputDevices, accentColor } from "$lib/stores";
+  import {
+    inputDevices,
+    outputDevices,
+    accentColor,
+    isWidescreen,
+  } from "$lib/stores";
   import { getDevices, labelDevices } from "$lib/devices";
   import { adjustBrightness } from "$lib/color";
 
@@ -470,7 +475,7 @@
               </Button>
             </Tooltip>
             <Tooltip
-              delay={300}
+              delay={$isWidescreen ? 1000 : 300}
               placement="top"
               offset={10}
               text="Apply config"

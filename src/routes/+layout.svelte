@@ -5,12 +5,13 @@
     WebviewWindow,
     getCurrentWebviewWindow,
   } from "@tauri-apps/api/webviewWindow";
-  import { ready, accentColor } from "$lib/stores";
+  import { ready, accentColor, isWidescreen } from "$lib/stores";
   import { adjustBrightness } from "$lib/color";
   import "../app.css";
 
   let currentWindow: WebviewWindow;
   let unlisten: (() => void) | undefined;
+  let resizeObserver: ResizeObserver;
 
   function initWindow() {
     currentWindow.show();
@@ -30,6 +31,10 @@
     } catch (error) {
       console.error("Error getting accent color:", error);
     }
+  }
+
+  function checkScreenWidth() {
+    isWidescreen.set(window.innerWidth >= 645);
   }
 
   const isTauriLocalhost = (): boolean =>
@@ -68,6 +73,11 @@
         capture: true,
       });
     }
+
+    resizeObserver = new ResizeObserver(checkScreenWidth);
+    resizeObserver.observe(document.documentElement);
+
+    checkScreenWidth();
   };
 
   const removeEventListeners = (): void => {
@@ -78,6 +88,10 @@
       document.removeEventListener("keydown", disableSpecificKeys, {
         capture: true,
       });
+    }
+
+    if (resizeObserver) {
+      resizeObserver.disconnect();
     }
   };
 
