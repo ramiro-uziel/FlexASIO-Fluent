@@ -426,7 +426,7 @@
                 >{$editDevices ? "Edit Output" : "Edit Devices"}</span
               >
             </Button>
-            <Tooltip placement="top" offset={10} text="App Info">
+            <Tooltip delay={300} placement="top" offset={10} text="App Info">
               <Button
                 on:click={toggleModal}
                 variant={infoButtonVariant}
@@ -469,7 +469,7 @@
               </Button>
             </Tooltip>
 
-            <Tooltip placement="top" offset={10} text="Copy config">
+            <Tooltip delay={300} placement="top" offset={10} text="Copy config">
               <Button on:click={copyConfig}>
                 <Copy />
               </Button>
@@ -481,6 +481,7 @@
                 --fds-accent-default={$accentColor}
                 --fds-accent-secondary={$accentColor}
                 --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+                class="wd:w-full w-[63px]"
               >
                 <Checkmark
                   class={applyButtonVariant === "accent"

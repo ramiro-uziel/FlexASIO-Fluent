@@ -7,7 +7,6 @@
   import { TextBlock } from "fluent-svelte";
   import { fly } from "svelte/transition";
   import { expoOut } from "svelte/easing";
-  import { Menu, PredefinedMenuItem } from "@tauri-apps/api/menu";
   import TomlEditor from "$lib/components/TomlEditor.svelte";
 
   const tomlContent: Writable<string> = writable("");
@@ -46,27 +45,6 @@
     })();
   }
 
-  async function showContextMenu(event: MouseEvent) {
-    event.preventDefault();
-
-    const menuItems = await Promise.all([
-      PredefinedMenuItem.new({ item: "Cut" }),
-      PredefinedMenuItem.new({ item: "Copy" }),
-      PredefinedMenuItem.new({ item: "Paste" }),
-      PredefinedMenuItem.new({ item: "Separator" }),
-      PredefinedMenuItem.new({ item: "SelectAll" }),
-      PredefinedMenuItem.new({ item: "Separator" }),
-      PredefinedMenuItem.new({ item: "Undo" }),
-      PredefinedMenuItem.new({ item: "Redo" }),
-    ]);
-
-    const menu = await Menu.new({
-      items: menuItems,
-    });
-
-    await menu.popup();
-  }
-
   onMount(async () => {
     await getTomlPath();
     readTomlFile();
@@ -81,9 +59,5 @@
   class="flex flex-col mt-0 mb-0 select-none items-center overflow-y-scroll overflow-x-hidden gap-2.5 py-2"
   style="height: calc(100vh - 125px);"
 >
-  <TomlEditor
-    value={tomlContent}
-    onInput={handleTextareaChange}
-    onContextMenu={showContextMenu}
-  />
+  <TomlEditor value={tomlContent} onInput={handleTextareaChange} />
 </div>

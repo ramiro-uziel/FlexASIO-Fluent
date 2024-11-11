@@ -5,10 +5,10 @@
   import type { Writable } from "svelte/store";
   import { adjustBrightness } from "$lib/color";
   import { accentColor } from "$lib/stores";
+  import { Menu, PredefinedMenuItem, MenuItem } from "@tauri-apps/api/menu";
 
   export let value: Writable<string>;
   export let onInput: (event: Event) => void;
-  export let onContextMenu: (event: MouseEvent) => void;
 
   let selectTextColor: string;
   let textarea: HTMLTextAreaElement;
@@ -32,6 +32,58 @@
       highlighter.scrollTop = textarea.scrollTop;
       highlighter.scrollLeft = textarea.scrollLeft;
     }
+  }
+
+  function handleKeydown(event: KeyboardEvent) {
+    if ((event.ctrlKey || event.metaKey) && event.key === "z") {
+      event.preventDefault();
+      if (event.shiftKey) {
+        document.execCommand("redo");
+      } else {
+        document.execCommand("undo");
+      }
+    }
+  }
+
+  async function handleContextMenu(event: MouseEvent) {
+    event.preventDefault();
+
+    const menuItems = await Promise.all([
+      PredefinedMenuItem.new({
+        item: "Cut",
+      }),
+      PredefinedMenuItem.new({
+        item: "Copy",
+      }),
+      PredefinedMenuItem.new({ item: "Paste" }),
+      PredefinedMenuItem.new({ item: "Separator" }),
+      PredefinedMenuItem.new({ item: "SelectAll" }),
+      PredefinedMenuItem.new({ item: "Separator" }),
+      MenuItem.new({
+        text: "Undo",
+        accelerator: "CommandOrControl+Z",
+        enabled: document.queryCommandEnabled("undo"),
+        action: () => {
+          textarea.focus();
+          document.execCommand("undo");
+        },
+      }),
+      MenuItem.new({
+        text: "Redo",
+        accelerator: "CommandOrControl+Shift+Z",
+        enabled: document.queryCommandEnabled("redo"),
+        action: () => {
+          textarea.focus();
+          document.execCommand("redo");
+        },
+      }),
+    ]);
+
+    const menu = await Menu.new({
+      items: menuItems,
+    });
+
+    await menu.popup();
   }
 
   $: {
@@ -59,7 +111,8 @@
     bind:this={textarea}
     bind:value={$value}
     on:input={onInput}
-    on:contextmenu={onContextMenu}
+    on:keydown={handleKeydown}
+    on:contextmenu={handleContextMenu}
     spellcheck="false"
     class="editor font-mono font-normal"
     style="--select-color: {selectTextColor}; --select-color-light: {selectTextColorLight};"
