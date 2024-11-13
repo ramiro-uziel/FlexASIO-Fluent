@@ -8,6 +8,7 @@
   import { ready, accentColor, isWidescreen } from "$lib/stores";
   import { adjustBrightness } from "$lib/color";
   import "../app.css";
+  import { checkWindows11 } from "$lib/app";
 
   let currentWindow: WebviewWindow;
   let unlisten: (() => void) | undefined;
@@ -19,6 +20,18 @@
 
   function updateDarkMode(theme: string): void {
     document.documentElement.classList.toggle("dark", theme === "dark");
+  }
+
+  function setBodyBackground(color: string): void {
+    document.body.style.backgroundColor = color;
+  }
+
+  async function setWindowBackground() {
+    let isWin11 = await checkWindows11();
+
+    if (!isWin11) {
+      setBodyBackground("#202020");
+    }
   }
 
   async function getAccentColor() {
@@ -99,6 +112,7 @@
     currentWindow = getCurrentWebviewWindow();
 
     await getAccentColor();
+    await setWindowBackground();
 
     // Hack for tauri issue, timeout to prevent flickering.
     // The background color is not transparent on startup for a brief moment,
