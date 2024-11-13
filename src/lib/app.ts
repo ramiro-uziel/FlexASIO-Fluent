@@ -1,6 +1,7 @@
 import { writable } from "svelte/store";
 import { getVersion } from "@tauri-apps/api/app";
 import { load } from "@tauri-apps/plugin-store";
+import { invoke } from "@tauri-apps/api/core";
 
 let storePromise = load("config.json", { autoSave: false });
 
@@ -107,4 +108,17 @@ export async function loadUIState() {
   editDevices.subscribe((val) => {
     store.set("editDevices", val);
   });
+}
+
+export async function checkWindows11() {
+  try {
+    const version = (await invoke("get_windows_version")) as [
+      number,
+      number,
+      number
+    ];
+    return version[2] >= 22000;
+  } catch (error) {
+    console.error("Error checking Windows version:", error);
+  }
 }

@@ -28,7 +28,7 @@
     "shortDescription": "FlexASIO Fluent"
   },
   "productName": "FlexASIO Fluent",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "identifier": "com.FlexASIOFluent.dev",
   "plugins": {},
   "app": {
