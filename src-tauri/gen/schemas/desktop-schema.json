@@ -3423,16 +3423,6 @@
           "const": "core:window:deny-unminimize"
         },
         {
-          "description": "Enables the show_snap_overlay command without any pre-configured scope.",
-          "type": "string",
-          "const": "decorum:allow-show-snap-overlay"
-        },
-        {
-          "description": "Denies the show_snap_overlay command without any pre-configured scope.",
-          "type": "string",
-          "const": "decorum:deny-show-snap-overlay"
-        },
-        {
           "description": "This permission set configures the types of dialogs\navailable from the dialog plugin.\n\n#### Granted Permissions\n\nAll dialog types are enabled.\n\n\n",
           "type": "string",
           "const": "dialog:default"

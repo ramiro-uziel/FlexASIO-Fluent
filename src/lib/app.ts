@@ -1,4 +1,6 @@
-import { writable } from "svelte/store";
+import { get, writable, type Writable } from "svelte/store";
+import type { Window } from "@tauri-apps/api/window";
+import { appWindow } from "$lib/stores";
 import { getVersion } from "@tauri-apps/api/app";
 import { load } from "@tauri-apps/plugin-store";
 import { invoke } from "@tauri-apps/api/core";
@@ -122,3 +124,33 @@ export async function checkWindows11() {
     console.error("Error checking Windows version:", error);
   }
 }
+
+export const minimizeWindow = () => {
+  appWindow.subscribe((window) => {
+    window?.minimize();
+  });
+};
+
+export const maximizeWindow = async () => {
+  appWindow.subscribe(async (window) => {
+    await window?.toggleMaximize();
+  });
+};
+
+export const closeWindow = () => {
+  appWindow.subscribe((window) => {
+    window?.close();
+  });
+};
+
+export const fullscreenWindow = async () => {
+  appWindow.subscribe(async (window) => {
+    const fullscreen = await window?.isFullscreen();
+
+    if (fullscreen) {
+      await window?.setFullscreen(false);
+    } else {
+      await window?.setFullscreen(true);
+    }
+  });
+};

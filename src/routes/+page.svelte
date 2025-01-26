@@ -1,3 +1,4 @@
+<!--+page.svelte-->
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import { get } from "svelte/store";
@@ -43,6 +44,7 @@
 
   import type { AudioBackend, Config } from "$lib/types";
   import { invoke } from "@tauri-apps/api/core";
+  import WindowsControls from "$lib/components/WindowsControls.svelte";
 
   const AUDIO_BACKENDS: { [key: string]: AudioBackend } = {
     MME: { value: "MME", displayName: "MME" },
@@ -66,8 +68,10 @@
   let outputEdit: OutputEdit;
   let invalidConfig = false;
   let loaded = false;
+  let initialLoadComplete = false;
   let textEdited = false;
   let listEdited = false;
+  let devicesLoading = false;
   let applyButtonVariant: "accent" | "standard" | "hyperlink" | undefined =
     "standard";
   let infoButtonVariant: "accent" | "standard" | "hyperlink" | undefined =
@@ -194,21 +198,22 @@
           ? "Default"
           : config.bufferSizeSamples.toString();
 
-      await getDevices(selectedBackend);
-      await labelDevices(selectedBackend);
+      labelDevices(selectedBackend).then(() => {
+        const inputDevicesValue = get(inputDevices);
+        const outputDevicesValue = get(outputDevices);
 
-      const inputDevicesValue = get(inputDevices);
-      const outputDevicesValue = get(outputDevices);
+        selectedInput =
+          inputDevicesValue.findIndex((d) => d.name === config.input.device) -
+          1;
+        selectedOutput =
+          outputDevicesValue.findIndex((d) => d.name === config.output.device) -
+          1;
 
-      selectedInput =
-        inputDevicesValue.findIndex((d) => d.name === config.input.device) - 1;
-      selectedOutput =
-        outputDevicesValue.findIndex((d) => d.name === config.output.device) -
-        1;
+        if (selectedInput === -2) selectedInput = -1;
+        if (selectedOutput === -2) selectedOutput = -1;
+      });
 
-      if (selectedInput === -2) selectedInput = -1;
-      if (selectedOutput === -2) selectedOutput = -1;
-
+      // Rest of the configuration
       inputSetLatency = config.input.suggestedLatencySeconds !== null;
       inputLatency = config.input.suggestedLatencySeconds || 0;
       outputSetLatency = config.output.suggestedLatencySeconds !== null;
@@ -245,17 +250,27 @@
 
   // Device Management
   async function updateDevicesList() {
-    await getDevices(selectedBackend);
-    await labelDevices(selectedBackend);
-    selectedInput = -1;
-    selectedOutput = -1;
-    updateListEdited();
+    devicesLoading = true;
+    try {
+      await getDevices(selectedBackend);
+      await labelDevices(selectedBackend);
+      selectedInput = -1;
+      selectedOutput = -1;
+      updateListEdited();
+    } finally {
+      devicesLoading = false;
+    }
   }
 
   async function refreshDevices() {
-    await getDevices(selectedBackend);
-    await labelDevices(selectedBackend);
-    updateListEdited();
+    devicesLoading = true;
+    try {
+      await getDevices(selectedBackend);
+      await labelDevices(selectedBackend);
+      updateListEdited();
+    } finally {
+      devicesLoading = false;
+    }
   }
 
   // File handlers
@@ -329,33 +344,33 @@
   }
 
   onMount(async () => {
-    await checkVersion();
     await loadUIState();
-    let currentWindow = getCurrentWebviewWindow();
     await loadAndSetConfig();
-    setTimeout(async () => {
-      await currentWindow.show();
-    }, 0);
+    await checkVersion();
+    let currentWindow = getCurrentWebviewWindow();
+    // Hack for tauri issue, timeout to prevent flickering.
+    // The background color is not transparent on startup for a brief moment,
+    // so we hide the window until the style is applied on the window.
+    setTimeout(() => {
+      currentWindow.show();
+    }, 350);
   });
 </script>
 
 {#if loaded}
   <div class="overflow-hidden w-full">
+    <div class="flex h-[35px] w-full overflow-hidden select-none">
+      <div class="flex flex-1 items-center gap-2 px-3 pointer-events-none">
+        <img src="favicon.png" alt="FlexASIO Fluent Icon" class="size-[15px]" />
+        <span class="text-[12px]">FlexASIO Fluent</span>
+      </div>
+
+      <WindowsControls class="flex z-[80]" />
+    </div>
     <div
       data-tauri-drag-region
-      class="h-[35px] overflow-hidden select-none z-10"
-    >
-      <div class="pointer-events-none w-full">
-        <div class="flex flex-row items-center align-middle p-2 gap-2 ml-1">
-          <img
-            src="favicon.png"
-            alt="FlexASIO Fluent Icon"
-            class="size-[15px]"
-          />
-          <span class="text-[12px]">FlexASIO Fluent</span>
-        </div>
-      </div>
-    </div>
+      class="absolute inset-0 z-[60] pointer-events-auto w-full h-[35px]"
+    ></div>
 
     {#if showModal}
       <InfoModal bind:showModal></InfoModal>

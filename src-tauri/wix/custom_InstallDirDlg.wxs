@@ -51,8 +51,8 @@
           <Publish Event="SpawnDialog" Value="BrowseDlg" Order="2">1</Publish>
         </Control>
         <Control Id="InstallShortcutCheckbox" Type="CheckBox" X="20" Y="160" Width="200" Height="17"
-          Property="INSTALLSHORTCUT" CheckBoxValue="1"
-          Text="Do you want to create a start menu shortcut?" />
+          Property="INSTALLSHORTCUT" CheckBoxValue="0"
+          Text="Do you want to create a desktop shortcut?" />
       </Dialog>
     </UI>
   </Fragment>

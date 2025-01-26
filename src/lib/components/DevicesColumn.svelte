@@ -10,7 +10,6 @@
     TextBlock,
   } from "fluent-svelte";
 
-  // Props
   export let expanded: boolean;
   export let setModes: boolean;
   export let exclusive: boolean;
@@ -32,7 +31,6 @@
   export let SetModesEnabled: boolean;
   export let channelsEnabled = true;
 
-  // Content Height State
   $: SetModesEnabled = !setModes;
 
   $: if (SetModesEnabled) {
@@ -77,7 +75,23 @@
               : "max-height: calc(100vh - 381px);"
             : ""}
         >
-          {#each devices as { label, device, value }}
+          {#each devices as { label, device, value }, i}
+            {#if i > 0 && label.startsWith("[Loopback]") && !devices[i - 1].label.startsWith("[Loopback]")}
+              <div class="flex flex-col gap-1">
+                <div class="flex py-1 mt-2">
+                  <TextBlock
+                    variant="caption"
+                    style="color: var(--fds-text-tertiary);">Loopback</TextBlock
+                  >
+                </div>
+                <div
+                  class="h-[1px]"
+                  style="width: {isWidescreen
+                    ? 'calc(100% - 10px)'
+                    : '100%'}; background-color: var(--fds-text-tertiary); opacity: 0.2;"
+                ></div>
+              </div>
+            {/if}
             <div class="w-full">
               <RadioButton
                 bind:group={selectedDevice}
@@ -85,14 +99,17 @@
                 --fds-accent-default={$accentColor}
                 --fds-accent-secondary={$accentColor}
                 --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
-                ><div class="flex flex-col">
-                  <TextBlock variant="body" class="">{label}</TextBlock>
+              >
+                <div class="flex flex-col">
+                  <TextBlock variant="body" class=""
+                    >{label.replace("[Loopback]", "")}</TextBlock
+                  >
                   <TextBlock
                     variant="caption"
                     style="color: var(--fds-text-tertiary);">{device}</TextBlock
                   >
-                </div></RadioButton
-              >
+                </div>
+              </RadioButton>
             </div>
           {/each}
         </div>
