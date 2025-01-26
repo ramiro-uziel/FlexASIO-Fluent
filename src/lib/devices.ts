@@ -40,12 +40,20 @@ export async function labelDevices(selectedBackend: string) {
         };
       }
     } else {
-      const match = device.match(/^(.*?)\s*\((.*?)\)$/);
-      if (match) {
+      const bracketMatch = device.match(/^(.*?)\s*\((.*?)\)(?:\s*\[(.*?)\])?$/);
+      if (bracketMatch) {
+        const baseName = bracketMatch[2].trim();
+        const parenthesis = bracketMatch[1].trim();
+        const brackets = bracketMatch[3];
+
+        const finalLabelName = brackets
+          ? `[${brackets}] ${parenthesis}`
+          : parenthesis;
+
         return {
           name: device,
-          label: match[1].trim(),
-          device: match[2].trim(),
+          label: finalLabelName,
+          device: baseName,
           value: -1,
         };
       }
@@ -59,7 +67,14 @@ export async function labelDevices(selectedBackend: string) {
         ...extractNameAndDevice(device, selectedBackend),
         originalIndex: index,
       }))
-      .sort((a, b) => a.label.localeCompare(b.label))
+      .sort((a, b) => {
+        const aIsLoopback = a.label.startsWith("[Loopback]");
+        const bIsLoopback = b.label.startsWith("[Loopback]");
+
+        if (aIsLoopback && !bIsLoopback) return 1;
+        if (!aIsLoopback && bIsLoopback) return -1;
+        return a.label.localeCompare(b.label);
+      })
       .map((device, index) => ({ ...device, value: index }));
 
   const { inputList, outputList } = await getDevices(selectedBackend);

@@ -1,5 +1,4 @@
-@import url("https://unpkg.com/fluent-svelte/theme.css");
-
+@import "./fluent-svelte.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

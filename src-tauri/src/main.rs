@@ -12,7 +12,6 @@ use std::fs;
 use std::path::Path;
 use tauri::command;
 use tauri::Manager;
-use tauri_plugin_decorum::WebviewWindowExt;
 use tauri_plugin_dialog::DialogExt;
 use windows::Win32::Foundation::BOOL;
 use windows::Win32::Graphics::Dwm::DwmGetColorizationColor;
@@ -77,52 +76,61 @@ where
 }
 
 #[command]
-fn list_audio_devices(backend: String) -> Result<(Vec<String>, Vec<String>), String> {
-    let pa = match pa::PortAudio::new() {
-        Ok(pa) => pa,
-        Err(_) => return Ok((Vec::new(), Vec::new())),
-    };
+fn list_audio_devices(backend: &str) -> Result<(Vec<String>, Vec<String>), String> {
+    let pa =
+        pa::PortAudio::new().map_err(|err| format!("Failed to initialize PortAudio: {}", err))?;
 
-    let host_apis: Vec<(pa::HostApiIndex, pa::HostApiInfo)> = match pa
-        .host_apis()
-        .map(|api| Ok::<(pa::HostApiIndex, pa::HostApiInfo), pa::Error>(api))
-        .collect::<Result<Vec<_>, _>>()
-    {
-        Ok(host_apis) => host_apis,
-        Err(_) => return Ok((Vec::new(), Vec::new())),
-    };
-
-    let target_api = match backend.as_str() {
+    let target_api = match backend {
         "MME" => "MME",
         "DirectSound" => "Windows DirectSound",
         "WASAPI" => "Windows WASAPI",
         "WDM-KS" => "Windows WDM-KS",
-        _ => return Ok((Vec::new(), Vec::new())),
+        _ => {
+            return Ok((Vec::new(), Vec::new()));
+        }
     };
+
+    let target_host_index = pa
+        .host_apis()
+        .find_map(|(index, info)| {
+            if info.name == target_api {
+                Some(index)
+            } else {
+                None
+            }
+        })
+        .ok_or_else(|| format!("Host API '{}' not found", target_api))?;
+
+    let devices = pa
+        .devices()
+        .map_err(|err| format!("Failed to get devices: {}", err))?;
 
     let mut input_devices = Vec::new();
     let mut output_devices = Vec::new();
 
-    for (host_api_index, host_api_info) in host_apis {
-        if host_api_info.name == target_api {
-            let devices = match pa.devices() {
-                Ok(devices) => devices,
-                Err(_) => return Ok((Vec::new(), Vec::new())),
-            };
-            for device in devices {
-                let (_index, info) = match device {
-                    Ok(device) => device,
-                    Err(_) => return Ok((Vec::new(), Vec::new())),
-                };
-                if info.host_api == host_api_index {
-                    if info.max_output_channels > 0 {
-                        output_devices.push(info.name.to_string());
-                    }
-                    if info.max_input_channels > 0 {
-                        input_devices.push(info.name.to_string());
-                    }
-                }
+    for device in devices {
+        let (_, info) = device.map_err(|_| "Failed to get device info".to_string())?;
+
+        if info.host_api != target_host_index {
+            continue;
+        }
+
+        let device_name = info.name.to_string();
+
+        if backend == "WASAPI" {
+            if info.max_input_channels > 0 {
+                input_devices.push(device_name.clone());
             }
+            if info.max_output_channels > 0 {
+                input_devices.push(format!("{} [Loopback]", device_name));
+            }
+        } else {
+            if info.max_input_channels > 0 {
+                input_devices.push(device_name.clone());
+            }
+        }
+        if info.max_output_channels > 0 {
+            output_devices.push(device_name);
         }
     }
 
@@ -313,7 +321,6 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_single_instance::init(|app_handle, _, _| {
-            // Focus the main window when attempting to launch a second instance
             if let Some(main_window) = app_handle.get_webview_window("main") {
                 main_window.set_focus().unwrap();
             }
@@ -325,7 +332,6 @@ fn main() {
                 .with_state_flags(flags)
                 .build(),
         )
-        .plugin(tauri_plugin_decorum::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_os::init())
@@ -339,12 +345,7 @@ fn main() {
             save_config_to_file,
             load_config_from_file,
         ])
-        .setup(|app| {
-            let main_window = app.get_webview_window("main").unwrap();
-            // main_window.set_decorations(true).unwrap();
-            main_window.create_overlay_titlebar().unwrap();
-            Ok(())
-        })
+        .setup(|_app| Ok(()))
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

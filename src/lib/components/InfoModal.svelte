@@ -65,7 +65,7 @@
 </script>
 
 <button
-  class="fixed bg-black inset-0 bg-opacity-50 flex items-center justify-center z-50 cursor-default"
+  class="fixed bg-black inset-0 bg-opacity-50 flex items-center justify-center z-[10] cursor-default select-none"
   on:click={() => (showModal = false)}
   transition:fade={{ duration: 200, easing: expoOut }}
 >
