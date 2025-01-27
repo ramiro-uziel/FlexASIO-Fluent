@@ -348,12 +348,10 @@
     await loadAndSetConfig();
     await checkVersion();
     let currentWindow = getCurrentWebviewWindow();
-    // Hack for tauri issue, timeout to prevent flickering.
-    // The background color is not transparent on startup for a brief moment,
-    // so we hide the window until the style is applied on the window.
+    // Show window when loaded
     setTimeout(() => {
       currentWindow.show();
-    }, 350);
+    }, 0);
   });
 </script>
 

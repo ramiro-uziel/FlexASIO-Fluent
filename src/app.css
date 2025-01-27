@@ -10,6 +10,10 @@
     background-color: transparent;
     color: var(--fds-text-primary);
     fill: var(--fds-text-primary);
+    overflow: hidden;
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
   }
 }
 /* Scrollbar styles */
@@ -29,7 +33,7 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #707070;
 }
 
 ::-webkit-scrollbar-corner {

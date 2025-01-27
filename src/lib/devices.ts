@@ -17,6 +17,36 @@ export async function getDevices(selectedBackend: string) {
   }
 }
 
+function extractLastParentheses(str: string) {
+  let result = null;
+  let baseName = str;
+  let depth = 0;
+
+  for (let i = str.length - 1; i >= 0; i--) {
+    if (str[i] === ")") {
+      if (depth === 0) {
+        let j = i;
+        let innerDepth = 1;
+        while (j >= 0 && innerDepth > 0) {
+          j--;
+          if (str[j] === ")") innerDepth++;
+          if (str[j] === "(") innerDepth--;
+        }
+        if (innerDepth === 0) {
+          result = str.substring(j + 1, i);
+          baseName = str.substring(0, j).trim();
+          break;
+        }
+      }
+      depth++;
+    } else if (str[i] === "(") {
+      depth--;
+    }
+  }
+
+  return { content: result, baseName };
+}
+
 export async function labelDevices(selectedBackend: string) {
   const extractNameAndDevice = (
     device: string,
@@ -40,20 +70,19 @@ export async function labelDevices(selectedBackend: string) {
         };
       }
     } else {
-      const bracketMatch = device.match(/^(.*?)\s*\((.*?)\)(?:\s*\[(.*?)\])?$/);
-      if (bracketMatch) {
-        const baseName = bracketMatch[2].trim();
-        const parenthesis = bracketMatch[1].trim();
-        const brackets = bracketMatch[3];
+      const bracketMatch = device.match(/^(.*?)\s*\[(.*?)\]$/);
+      const { content: deviceName, baseName } = extractLastParentheses(device);
 
+      if (deviceName) {
+        const brackets = bracketMatch ? bracketMatch[2] : null;
         const finalLabelName = brackets
-          ? `[${brackets}] ${parenthesis}`
-          : parenthesis;
+          ? `[${brackets}] ${baseName}`
+          : baseName;
 
         return {
           name: device,
           label: finalLabelName,
-          device: baseName,
+          device: deviceName,
           value: -1,
         };
       }
