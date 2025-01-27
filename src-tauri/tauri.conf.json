@@ -1,5 +1,5 @@
 {
-  "$schema": "./gen/schemas/desktop-schema.json",
+  "$schema": "https://schema.tauri.app/config/2",
   "build": {
     "beforeBuildCommand": "bun run build",
     "beforeDevCommand": "bun run dev",
@@ -31,6 +31,7 @@
   "version": "0.3.2",
   "identifier": "com.FlexASIOFluent.dev",
   "plugins": {},
+
   "app": {
     "windows": [
       {
@@ -44,9 +45,11 @@
         "visible": false,
         "windowEffects": {
           "effects": ["mica"]
-        }
+        },
+        "backgroundColor": "#000000"
       }
     ],
+
     "withGlobalTauri": true,
     "security": {
       "dangerousDisableAssetCspModification": ["style-src"],

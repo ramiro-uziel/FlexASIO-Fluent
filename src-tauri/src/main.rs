@@ -9,7 +9,6 @@ use rust_decimal::Decimal;
 use serde::de::Error as DeError;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fs;
-use std::path::Path;
 use tauri::command;
 use tauri::Manager;
 use tauri_plugin_dialog::DialogExt;
@@ -37,6 +36,7 @@ struct Config {
     input: Option<InputOutput>,
     output: Option<InputOutput>,
 }
+
 #[allow(non_snake_case)]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct InputOutput {
@@ -170,14 +170,16 @@ fn save_config(toml_path: String, config: Config) -> Result<(), String> {
 
 fn write_toml_file(path: &str, config: &Config) -> Result<(), Box<dyn std::error::Error>> {
     let toml_str = toml::to_string(config)?;
-    fs::write(path, toml_str)?;
+    // Trim trailing whitespace and newlines before writing
+    let trimmed_toml_str = toml_str.trim_end();
+    fs::write(path, trimmed_toml_str)?;
     Ok(())
 }
 
 #[command]
 async fn save_config_to_file(app_handle: tauri::AppHandle, config: Config) -> Result<(), String> {
     let normalized_config = normalize_config(config);
-    let toml_str = toml::to_string(&normalized_config)
+    let _toml_str = toml::to_string(&normalized_config)
         .map_err(|e| format!("Failed to serialize config: {}", e))?;
 
     if let Some(path) = app_handle
@@ -189,7 +191,8 @@ async fn save_config_to_file(app_handle: tauri::AppHandle, config: Config) -> Re
         .blocking_save_file()
     {
         let path_str = path.to_string();
-        fs::write(Path::new(&path_str), toml_str)
+        // Use the updated write_toml_file function
+        write_toml_file(&path_str, &normalized_config)
             .map_err(|e| format!("Failed to write config file: {}", e))?;
         Ok(())
     } else {
@@ -319,19 +322,22 @@ fn main() {
     flags.remove(StateFlags::VISIBLE);
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_store::Builder::new().build())
-        .plugin(tauri_plugin_single_instance::init(|app_handle, _, _| {
-            if let Some(main_window) = app_handle.get_webview_window("main") {
-                main_window.set_focus().unwrap();
-            }
-        }))
-        .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_shell::init())
         .plugin(
             tauri_plugin_window_state::Builder::default()
                 .with_state_flags(flags)
                 .build(),
         )
+        .plugin(tauri_plugin_store::Builder::new().build())
+        .plugin(tauri_plugin_single_instance::init(|app_handle, _, _| {
+            if let Some(main_window) = app_handle.get_webview_window("main") {
+                if main_window.is_minimized().unwrap() {
+                    main_window.unminimize().unwrap();
+                }
+                main_window.set_focus().unwrap();
+            }
+        }))
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_os::init())
