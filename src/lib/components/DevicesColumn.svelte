@@ -2,13 +2,9 @@
   import { adjustBrightness } from "$lib/color";
   import { accentColor } from "$lib/stores";
 
-  import {
-    Checkbox,
-    Expander,
-    NumberBox,
-    RadioButton,
-    TextBlock,
-  } from "fluent-svelte";
+  import { Checkbox, NumberBox, RadioButton, TextBlock } from "fluent-svelte";
+
+  import CustomExpander from "./fluent-svelte-custom/CustomExpander.svelte";
 
   export let expanded: boolean;
   export let setModes: boolean;
@@ -46,7 +42,7 @@
 
 <div class="flex flex-col w-full">
   <div class="mb-[1px]">
-    <Expander
+    <CustomExpander
       bind:expanded
       --fds-control-fast-duration="0s"
       --fds-control-slow-duration="0s"
@@ -66,13 +62,13 @@
 
       <svelte:fragment slot="content">
         <div
-          class="flex flex-col w-full gap-2 overflow-scroll {isWidescreen
+          class="scroll-container flex flex-col w-full gap-2 p-[16px] overflow-y-auto {isWidescreen
             ? 'h-[calc(100vh)]'
             : ''}"
           style={isWidescreen
             ? selectedBackend === "WASAPI"
-              ? "max-height: calc(100vh - 435px);"
-              : "max-height: calc(100vh - 381px);"
+              ? "max-height: calc(100vh - 403px);"
+              : "max-height: calc(100vh - 349px);"
             : ""}
         >
           {#each devices as { label, device, value }, i}
@@ -86,9 +82,7 @@
                 </div>
                 <div
                   class="h-[1px]"
-                  style="width: {isWidescreen
-                    ? 'calc(100% - 10px)'
-                    : '100%'}; background-color: var(--fds-text-tertiary); opacity: 0.2;"
+                  style="background-color: var(--fds-text-tertiary); opacity: 0.2;"
                 ></div>
               </div>
             {/if}
@@ -114,7 +108,7 @@
           {/each}
         </div>
       </svelte:fragment>
-    </Expander>
+    </CustomExpander>
   </div>
   {#if selectedBackend === "WASAPI"}
     <div
@@ -210,3 +204,9 @@
     </div>
   </div>
 </div>
+
+<style>
+  .scroll-container::-webkit-scrollbar-track {
+    margin: 16px;
+  }
+</style>

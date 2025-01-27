@@ -1,4 +1,6 @@
 <script>
+  // @ts-nocheck
+
   import Button from "$lib/components/windows/Button.svelte";
   import Icons from "$lib/components/windows/Icons.svelte";
   import { closeWindow, maximizeWindow, minimizeWindow } from "$lib/app";

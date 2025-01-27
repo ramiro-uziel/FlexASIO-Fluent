@@ -21,7 +21,9 @@
 
   async function readTomlFile() {
     try {
+      console.log("Reading TOML file:", tomlPath);
       const content = await readTextFile(tomlPath);
+      console.log("Read TOML file:", content);
       tomlContent.set(content);
       originalContent = content;
     } catch (error) {

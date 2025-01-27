@@ -22,7 +22,7 @@
         Prism.languages.toml,
         "toml"
       );
-      highlighter.innerHTML = highlighted + "\n";
+      highlighter.innerHTML = highlighted;
     }
   }
 
@@ -36,12 +36,7 @@
 
   function handleKeydown(event: KeyboardEvent) {
     if ((event.ctrlKey || event.metaKey) && event.key === "z") {
-      event.preventDefault();
-      if (event.shiftKey) {
-        document.execCommand("redo");
-      } else {
-        document.execCommand("undo");
-      }
+      return;
     }
   }
 
@@ -49,12 +44,8 @@
     event.preventDefault();
 
     const menuItems = await Promise.all([
-      PredefinedMenuItem.new({
-        item: "Cut",
-      }),
-      PredefinedMenuItem.new({
-        item: "Copy",
-      }),
+      PredefinedMenuItem.new({ item: "Cut" }),
+      PredefinedMenuItem.new({ item: "Copy" }),
       PredefinedMenuItem.new({ item: "Paste" }),
       PredefinedMenuItem.new({ item: "Separator" }),
       PredefinedMenuItem.new({ item: "SelectAll" }),
@@ -66,6 +57,7 @@
         action: () => {
           textarea.focus();
           document.execCommand("undo");
+          $value = textarea.value;
         },
       }),
       MenuItem.new({
@@ -75,14 +67,12 @@
         action: () => {
           textarea.focus();
           document.execCommand("redo");
+          $value = textarea.value;
         },
       }),
     ]);
 
-    const menu = await Menu.new({
-      items: menuItems,
-    });
-
+    const menu = await Menu.new({ items: menuItems });
     await menu.popup();
   }
 
