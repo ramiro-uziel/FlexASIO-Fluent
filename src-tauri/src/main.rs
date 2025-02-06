@@ -8,23 +8,21 @@ use rust_decimal::prelude::*;
 use rust_decimal::Decimal;
 use serde::de::Error as DeError;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::ffi::OsStr;
 use std::fs;
+use std::os::windows::ffi::OsStrExt;
 use tauri::command;
 use tauri::Manager;
 use tauri_plugin_dialog::DialogExt;
-use windows::Win32::Foundation::BOOL;
-use windows::Win32::Graphics::Dwm::DwmGetColorizationColor;
-use windows_version::OsVersion;
-
-use std::ffi::OsStr;
-use std::os::windows::ffi::OsStrExt;
+use tauri_plugin_window_state::StateFlags;
 use windows::core::w;
 use windows::core::PCWSTR;
+use windows::Win32::Foundation::BOOL;
+use windows::Win32::Graphics::Dwm::DwmGetColorizationColor;
 use windows::Win32::Storage::FileSystem::{
     GetFileVersionInfoSizeW, GetFileVersionInfoW, VerQueryValueW,
 };
-
-use tauri_plugin_window_state::StateFlags;
+use windows_version::OsVersion;
 
 const FLEXASIO_DLL_PATH: &str = "C:\\Program Files\\FlexASIO\\x64\\flexasio.dll";
 
@@ -170,7 +168,6 @@ fn save_config(toml_path: String, config: Config) -> Result<(), String> {
 
 fn write_toml_file(path: &str, config: &Config) -> Result<(), Box<dyn std::error::Error>> {
     let toml_str = toml::to_string(config)?;
-    // Trim trailing whitespace and newlines before writing
     let trimmed_toml_str = toml_str.trim_end();
     fs::write(path, trimmed_toml_str)?;
     Ok(())
@@ -191,7 +188,6 @@ async fn save_config_to_file(app_handle: tauri::AppHandle, config: Config) -> Re
         .blocking_save_file()
     {
         let path_str = path.to_string();
-        // Use the updated write_toml_file function
         write_toml_file(&path_str, &normalized_config)
             .map_err(|e| format!("Failed to write config file: {}", e))?;
         Ok(())
@@ -316,10 +312,10 @@ fn get_dll_product_version() -> Result<String, String> {
         Ok(version_string.trim_end_matches('\0').to_string())
     }
 }
-
 fn main() {
     let mut flags = StateFlags::all();
     flags.remove(StateFlags::VISIBLE);
+    flags.remove(StateFlags::DECORATIONS);
 
     tauri::Builder::default()
         .plugin(

@@ -1,16 +1,15 @@
-import { get, writable, type Writable } from "svelte/store";
-import type { Window } from "@tauri-apps/api/window";
-import { appWindow } from "$lib/stores";
+import { writable } from "svelte/store";
+import { accentColor, appWindow } from "$lib/stores";
 import { getVersion } from "@tauri-apps/api/app";
 import { load } from "@tauri-apps/plugin-store";
 import { invoke } from "@tauri-apps/api/core";
+import { adjustBrightness } from "./color";
 
 let storePromise = load("config.json", { autoSave: false });
 
 export const updateAvailable = writable(false);
 export const latestVersion = writable<string | null>(null);
 export const updateDismissed = writable(false);
-
 export const inputExpanded = writable(true);
 export const outputExpanded = writable(true);
 export const editDevices = writable(true);
@@ -154,3 +153,15 @@ export const fullscreenWindow = async () => {
     }
   });
 };
+
+export async function getAccentColor(): Promise<void> {
+  try {
+    const color = adjustBrightness(
+      await invoke<string>("get_accent_color"),
+      70
+    );
+    accentColor.set(color);
+  } catch (error) {
+    console.error("Error getting accent color:", error);
+  }
+}

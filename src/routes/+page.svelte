@@ -348,7 +348,6 @@
     await loadAndSetConfig();
     await checkVersion();
     let currentWindow = getCurrentWebviewWindow();
-    // Show window when loaded
     setTimeout(() => {
       currentWindow.show();
     }, 0);

@@ -43,6 +43,7 @@
         "minHeight": 405,
         "transparent": true,
         "visible": false,
+        "decorations": false,
         "windowEffects": {
           "effects": ["mica"]
         },
