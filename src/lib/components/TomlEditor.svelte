@@ -4,7 +4,7 @@
   import "prismjs/components/prism-toml";
   import type { Writable } from "svelte/store";
   import { adjustBrightness } from "$lib/color";
-  import { accentColor } from "$lib/stores";
+  import { accent } from "$lib/stores";
   import { Menu, PredefinedMenuItem, MenuItem } from "@tauri-apps/api/menu";
 
   export let value: Writable<string>;
@@ -81,8 +81,8 @@
     syncHighlight();
   }
 
-  $: selectTextColor = adjustBrightness($accentColor, -50, 0);
-  $: selectTextColorLight = adjustBrightness($accentColor, 10, -60);
+  $: selectTextColor = adjustBrightness($accent, -50, 0);
+  $: selectTextColorLight = adjustBrightness($accent, 0, 50);
 
   onMount(() => {
     syncHighlight();

@@ -3,10 +3,18 @@ export function adjustBrightness(
   brightnessPercent: number,
   contrastPercent?: number
 ): string {
-  const rgb = parseInt(color.slice(1), 16);
-  let r = (rgb >> 16) & 0xff;
-  let g = (rgb >> 8) & 0xff;
-  let b = rgb & 0xff;
+  if (!color || color.trim() === "") {
+    return "";
+  }
+
+  const rgbMatch = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+  if (!rgbMatch) {
+    throw new Error("Invalid RGB format. Expected rgb(r, g, b)");
+  }
+
+  let r = parseInt(rgbMatch[1], 10);
+  let g = parseInt(rgbMatch[2], 10);
+  let b = parseInt(rgbMatch[3], 10);
 
   const brightnessMultiplier = 1 + brightnessPercent / 100;
   r = Math.round(r * brightnessMultiplier);
@@ -14,15 +22,15 @@ export function adjustBrightness(
   b = Math.round(b * brightnessMultiplier);
 
   if (contrastPercent !== undefined) {
-    const contrastFactor = (100 + contrastPercent) / 100;
-    r = Math.round((r - 128) * contrastFactor + 128);
-    g = Math.round((g - 128) * contrastFactor + 128);
-    b = Math.round((b - 128) * contrastFactor + 128);
+    const contrastFactor = Math.max(0, Math.min(contrastPercent, 100)) / 100;
+    r = Math.round(r + (255 - r) * contrastFactor);
+    g = Math.round(g + (255 - g) * contrastFactor);
+    b = Math.round(b + (255 - b) * contrastFactor);
   }
 
   r = Math.max(0, Math.min(255, r));
   g = Math.max(0, Math.min(255, g));
   b = Math.max(0, Math.min(255, b));
 
-  return `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
+  return `rgb(${r}, ${g}, ${b})`;
 }

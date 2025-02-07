@@ -1,9 +1,6 @@
 <script lang="ts">
-  import { adjustBrightness } from "$lib/color";
-  import { accentColor } from "$lib/stores";
-
+  import { accent, accentActive, accentHover } from "$lib/stores";
   import { Checkbox, NumberBox, RadioButton, TextBlock } from "fluent-svelte";
-
   import CustomExpander from "./fluent-svelte-custom/CustomExpander.svelte";
 
   export let expanded: boolean;
@@ -90,9 +87,9 @@
               <RadioButton
                 bind:group={selectedDevice}
                 {value}
-                --fds-accent-default={$accentColor}
-                --fds-accent-secondary={$accentColor}
-                --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+                --fds-accent-default={$accent}
+                --fds-accent-secondary={$accentHover}
+                --fds-accent-tertiary={$accentActive}
               >
                 <div class="flex flex-col">
                   <TextBlock variant="body" class=""
@@ -118,9 +115,9 @@
       <div class="flex flex-row justify-between items-center">
         <div class="flex flex-row items-center">
           <Checkbox
-            --fds-accent-default={$accentColor}
-            --fds-accent-secondary={$accentColor}
-            --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+            --fds-accent-default={$accent}
+            --fds-accent-secondary={$accentHover}
+            --fds-accent-tertiary={$accentActive}
             on:input={() => (setModes = !setModes)}
             bind:checked={setModes}
             >Modes
@@ -128,17 +125,17 @@
         </div>
         <div class="flex flex-row gap-2">
           <Checkbox
-            --fds-accent-default={$accentColor}
-            --fds-accent-secondary={$accentColor}
-            --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+            --fds-accent-default={$accent}
+            --fds-accent-secondary={$accentHover}
+            --fds-accent-tertiary={$accentActive}
             bind:checked={exclusive}
             bind:disabled={SetModesEnabled}
             >Exclusive
           </Checkbox>
           <Checkbox
-            --fds-accent-default={$accentColor}
-            --fds-accent-secondary={$accentColor}
-            --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+            --fds-accent-default={$accent}
+            --fds-accent-secondary={$accentHover}
+            --fds-accent-tertiary={$accentActive}
             bind:checked={autoconvert}
             bind:disabled={SetModesEnabled}
             >Autoconvert
@@ -156,9 +153,9 @@
       <TextBlock variant="bodyStrong" class="w-[90px]">Latency</TextBlock>
       <div class="flex flex-row gap-3">
         <Checkbox
-          --fds-accent-default={$accentColor}
-          --fds-accent-secondary={$accentColor}
-          --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+          --fds-accent-default={$accent}
+          --fds-accent-secondary={$accentHover}
+          --fds-accent-tertiary={$accentActive}
           bind:checked={setLatency}
         ></Checkbox>
         <NumberBox
@@ -167,9 +164,9 @@
           step={0.1}
           min={0}
           class="max-w-[163px]"
-          --fds-accent-default={$accentColor}
-          --fds-accent-secondary={$accentColor}
-          --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+          --fds-accent-default={$accent}
+          --fds-accent-secondary={$accentHover}
+          --fds-accent-tertiary={$accentActive}
           bind:value={latency}
         ></NumberBox>
       </div>
@@ -183,9 +180,9 @@
       <TextBlock variant="bodyStrong" class="w-[90px]">Channels</TextBlock>
       <div class="flex flex-row gap-3">
         <Checkbox
-          --fds-accent-default={$accentColor}
-          --fds-accent-secondary={$accentColor}
-          --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+          --fds-accent-default={$accent}
+          --fds-accent-secondary={$accentHover}
+          --fds-accent-tertiary={$accentActive}
           bind:checked={setChannels}
           bind:disabled={channelsEnabled}
         ></Checkbox>
@@ -195,9 +192,9 @@
           step={1}
           min={0}
           class="max-w-[163px]"
-          --fds-accent-default={$accentColor}
-          --fds-accent-secondary={$accentColor}
-          --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+          --fds-accent-default={$accent}
+          --fds-accent-secondary={$accentHover}
+          --fds-accent-tertiary={$accentActive}
           bind:value={channels}
         ></NumberBox>
       </div>
