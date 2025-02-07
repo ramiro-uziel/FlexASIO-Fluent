@@ -1,25 +1,21 @@
 <script lang="ts">
   import DevicesColumn from "./DevicesColumn.svelte";
-
   import { createEventDispatcher } from "svelte";
   import { fly } from "svelte/transition";
   import { expoOut } from "svelte/easing";
   import {
-    accentColor,
     inputDevices,
     outputDevices,
     isWidescreen,
+    accent,
+    accentHover,
   } from "$lib/stores";
-
   import { Button, ComboBox, TextBlock, Tooltip } from "fluent-svelte";
-
   import CustomComboBox from "./fluent-svelte-custom/CustomComboBox.svelte";
-
   import Speaker from "@fluentui/svg-icons/icons/speaker_2_20_regular.svg?component";
   import Microphone from "@fluentui/svg-icons/icons/mic_20_regular.svg?component";
   import Refresh from "@fluentui/svg-icons/icons/arrow_clockwise_20_regular.svg?component";
   import Info from "@fluentui/svg-icons/icons/info_20_filled.svg?component";
-
   import type { AudioBackend } from "$lib/types";
 
   export let inputExpanded: boolean;
@@ -142,8 +138,8 @@
             on:input={updateDevices}
             placeholder="Select a Backend"
             class="w-[150px] custom-combo-box"
-            --fds-accent-default={$accentColor}
-            --fds-accent-secondary={$accentColor}
+            --fds-accent-default={$accent}
+            --fds-accent-secondary={$accentHover}
           ></CustomComboBox>
           <ComboBox
             items={BufferSize}
@@ -151,8 +147,8 @@
             editable={true}
             placeholder="Buffer"
             class="max-w-[96px]"
-            --fds-accent-default={$accentColor}
-            --fds-accent-secondary={$accentColor}
+            --fds-accent-default={$accent}
+            --fds-accent-secondary={$accentHover}
             on:input={handleBufferInput}
           ></ComboBox>
           {#if selectedBackend === "MME"}
@@ -170,7 +166,7 @@
             class="rounded-full w-2 h-2 transition-all duration-150 ease-out"
             style="opacity: {isRefreshIndicatorAnimating
               ? '1'
-              : '0'}; background-color: {$accentColor}"
+              : '0'}; background-color: {$accent}"
           />
           <div class="space-x-1">
             <Button on:click={refreshDevices}

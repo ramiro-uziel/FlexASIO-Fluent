@@ -1,19 +1,23 @@
-import { get, writable, type Writable } from "svelte/store";
-import type { Window } from "@tauri-apps/api/window";
-import { appWindow } from "$lib/stores";
+import {
+  accent,
+  accentActive,
+  accentHover,
+  accentSystemColors,
+  appWindow,
+  editDevices,
+  inputExpanded,
+  latestVersion,
+  outputExpanded,
+  updateAvailable,
+  updateDismissed,
+} from "$lib/stores";
 import { getVersion } from "@tauri-apps/api/app";
 import { load } from "@tauri-apps/plugin-store";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { adjustBrightness } from "./color";
 
 let storePromise = load("config.json", { autoSave: false });
-
-export const updateAvailable = writable(false);
-export const latestVersion = writable<string | null>(null);
-export const updateDismissed = writable(false);
-
-export const inputExpanded = writable(true);
-export const outputExpanded = writable(true);
-export const editDevices = writable(true);
 
 const GITHUB_OWNER = "ramiro-uziel";
 const GITHUB_REPO = "FlexASIO-Fluent";
@@ -154,3 +158,48 @@ export const fullscreenWindow = async () => {
     }
   });
 };
+
+export async function getAccentColor(): Promise<void> {
+  try {
+    const colors = await invoke<Record<string, string>>(
+      "get_accent_colors_command"
+    );
+    accentSystemColors.set(colors);
+
+    console.log("colors background:", colors.background);
+
+    if (colors.background === "rgb(0, 0, 0)") {
+      console.log("Dark mode detected");
+      accent.set(colors.accentLight2);
+      accentHover.set(adjustBrightness(colors.accentLight2, -8));
+      accentActive.set(adjustBrightness(colors.accentLight2, -14));
+    } else {
+      console.log("Light mode detected");
+      accent.set(colors.accentDark1);
+      accentHover.set(adjustBrightness(colors.accentDark1, 8));
+      accentActive.set(adjustBrightness(colors.accentDark1, 14));
+    }
+  } catch (error) {
+    console.error("Error getting accent colors:", error);
+  }
+}
+
+listen("accent_color_changed", (event) => {
+  const colors = event.payload as Record<string, string>;
+  console.log("Got accent colors:", colors);
+  accentSystemColors.set(colors);
+
+  console.log("colors background:", colors.background);
+
+  if (colors.background === "rgb(0, 0, 0)") {
+    console.log("Dark mode detected");
+    accent.set(colors.accentLight2);
+    accentHover.set(adjustBrightness(colors.accentLight2, -8));
+    accentActive.set(adjustBrightness(colors.accentLight2, -14));
+  } else {
+    console.log("Light mode detected");
+    accent.set(colors.accentDark1);
+    accentHover.set(adjustBrightness(colors.accentDark1, 8));
+    accentActive.set(adjustBrightness(colors.accentDark1, 14));
+  }
+});

@@ -27,24 +27,24 @@
   import {
     inputDevices,
     outputDevices,
-    accentColor,
     isWidescreen,
+    accentHover,
+    accent,
+    accentActive,
   } from "$lib/stores";
-  import { getDevices, labelDevices } from "$lib/devices";
-  import { adjustBrightness } from "$lib/color";
-
   import {
     inputExpanded,
     outputExpanded,
     editDevices,
-    loadUIState,
-  } from "$lib/app";
-
-  import { checkVersion, updateDismissed, updateAvailable } from "$lib/app";
-
+    updateDismissed,
+    updateAvailable,
+  } from "$lib/stores";
+  import { loadUIState, checkVersion } from "$lib/app";
   import type { AudioBackend, Config } from "$lib/types";
+  import { getDevices, labelDevices } from "$lib/devices";
+
   import { invoke } from "@tauri-apps/api/core";
-  import WindowsControls from "$lib/components/WindowsControls.svelte";
+  import WindowsControls from "$lib/components/windows/WindowsControls.svelte";
 
   const AUDIO_BACKENDS: { [key: string]: AudioBackend } = {
     MME: { value: "MME", displayName: "MME" },
@@ -348,7 +348,6 @@
     await loadAndSetConfig();
     await checkVersion();
     let currentWindow = getCurrentWebviewWindow();
-    // Show window when loaded
     setTimeout(() => {
       currentWindow.show();
     }, 0);
@@ -413,12 +412,7 @@
           <div class="w-full flex justify-center select-none px-3">
             <div class="flex flex-col gap-3 self-center w-full rounded-lg">
               <div class="flex flex-col gap-2">
-                <OutputEdit
-                  --fds-accent-default={$accentColor}
-                  --fds-accent-secondary={$accentColor}
-                  bind:this={outputEdit}
-                  bind:textEdited
-                />
+                <OutputEdit bind:this={outputEdit} bind:textEdited />
               </div>
             </div>
           </div>
@@ -443,9 +437,9 @@
               <Button
                 on:click={toggleModal}
                 variant={infoButtonVariant}
-                --fds-accent-default={$accentColor}
-                --fds-accent-secondary={$accentColor}
-                --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+                --fds-accent-default={$accent}
+                --fds-accent-secondary={$accentHover}
+                --fds-accent-tertiary={$accentActive}
               >
                 <Info
                   class={infoButtonVariant === "accent"
@@ -496,9 +490,9 @@
               <Button
                 on:click={handleApply}
                 variant={applyButtonVariant}
-                --fds-accent-default={$accentColor}
-                --fds-accent-secondary={$accentColor}
-                --fds-accent-tertiary={adjustBrightness($accentColor, -10)}
+                --fds-accent-default={$accent}
+                --fds-accent-secondary={$accentHover}
+                --fds-accent-tertiary={$accentActive}
                 class="wd:w-full w-[63px]"
               >
                 <Checkmark

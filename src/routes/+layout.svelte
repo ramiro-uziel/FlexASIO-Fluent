@@ -3,7 +3,7 @@
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { ready } from "$lib/stores";
   import { appWindow } from "$lib/stores";
-  import { getAccentColor } from "$lib/stores";
+  import { getAccentColor } from "$lib/app";
   import { WindowManager } from "$lib/window";
   import "../app.css";
 

@@ -8,23 +8,25 @@ use rust_decimal::prelude::*;
 use rust_decimal::Decimal;
 use serde::de::Error as DeError;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::fs;
-use tauri::command;
-use tauri::Manager;
-use tauri_plugin_dialog::DialogExt;
-use windows::Win32::Foundation::BOOL;
-use windows::Win32::Graphics::Dwm::DwmGetColorizationColor;
-use windows_version::OsVersion;
-
+use std::collections::HashMap;
 use std::ffi::OsStr;
+use std::fs;
 use std::os::windows::ffi::OsStrExt;
-use windows::core::w;
-use windows::core::PCWSTR;
+use std::thread;
+use tauri::command;
+use tauri::Emitter;
+use tauri::Manager;
+use tauri::WebviewWindow;
+use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_window_state::StateFlags;
+use windows::core::{w, PCWSTR};
+use windows::Foundation::TypedEventHandler;
 use windows::Win32::Storage::FileSystem::{
     GetFileVersionInfoSizeW, GetFileVersionInfoW, VerQueryValueW,
 };
-
-use tauri_plugin_window_state::StateFlags;
+use windows::UI::Color;
+use windows::UI::ViewManagement::{UIColorType, UISettings};
+use windows_version::OsVersion;
 
 const FLEXASIO_DLL_PATH: &str = "C:\\Program Files\\FlexASIO\\x64\\flexasio.dll";
 
@@ -73,6 +75,66 @@ where
         Ok(None) => Ok(None),
         Err(_) => Ok(None),
     }
+}
+
+fn setup_accent_change_listener(window: WebviewWindow) {
+    thread::spawn(move || {
+        // Create UISettings (this may fail so handle error in production)
+        let ui_settings = UISettings::new().expect("UISettings::new failed");
+        let window_clone = window.clone();
+        let handler: TypedEventHandler<UISettings, windows::core::IInspectable> =
+            TypedEventHandler::new(move |_, _| {
+                if let Ok(colors) = get_accent_colors() {
+                    if let Err(e) = window_clone.emit("accent_color_changed", colors) {
+                        eprintln!("Error emitting accent_color_changed: {:?}", e);
+                    }
+                }
+                Ok(())
+            });
+        if let Err(e) = ui_settings.ColorValuesChanged(&handler) {
+            eprintln!("Failed to register ColorValuesChanged: {:?}", e);
+        }
+        // Keep the thread alive.
+        loop {
+            std::thread::sleep(std::time::Duration::from_secs(60));
+        }
+    });
+}
+
+fn get_color(color_type: UIColorType) -> windows::core::Result<Color> {
+    let ui_settings = UISettings::new()?;
+    let color = ui_settings.GetColorValue(color_type)?;
+    Ok(color)
+}
+
+fn get_accent_colors() -> windows::core::Result<HashMap<String, String>> {
+    let colors = [
+        ("accent", UIColorType::Accent),
+        ("accentDark1", UIColorType::AccentDark1),
+        ("accentDark2", UIColorType::AccentDark2),
+        ("accentDark3", UIColorType::AccentDark3),
+        ("accentLight1", UIColorType::AccentLight1),
+        ("accentLight2", UIColorType::AccentLight2),
+        ("accentLight3", UIColorType::AccentLight3),
+        ("background", UIColorType::Background),
+        ("foreground", UIColorType::Foreground),
+    ];
+
+    let mut color_map = HashMap::new();
+    for (label, color_type) in colors {
+        let color = get_color(color_type)?;
+        color_map.insert(
+            label.to_string(),
+            format!("rgb({}, {}, {})", color.R, color.G, color.B),
+        );
+    }
+
+    Ok(color_map)
+}
+
+#[tauri::command]
+fn get_accent_colors_command() -> Result<HashMap<String, String>, String> {
+    get_accent_colors().map_err(|e| e.to_string())
 }
 
 #[command]
@@ -170,7 +232,6 @@ fn save_config(toml_path: String, config: Config) -> Result<(), String> {
 
 fn write_toml_file(path: &str, config: &Config) -> Result<(), Box<dyn std::error::Error>> {
     let toml_str = toml::to_string(config)?;
-    // Trim trailing whitespace and newlines before writing
     let trimmed_toml_str = toml_str.trim_end();
     fs::write(path, trimmed_toml_str)?;
     Ok(())
@@ -191,7 +252,6 @@ async fn save_config_to_file(app_handle: tauri::AppHandle, config: Config) -> Re
         .blocking_save_file()
     {
         let path_str = path.to_string();
-        // Use the updated write_toml_file function
         write_toml_file(&path_str, &normalized_config)
             .map_err(|e| format!("Failed to write config file: {}", e))?;
         Ok(())
@@ -215,25 +275,6 @@ async fn load_config_from_file(app_handle: tauri::AppHandle) -> Result<Config, S
         Ok(config)
     } else {
         Err("Load operation cancelled".to_string())
-    }
-}
-
-#[command]
-fn get_accent_color() -> Result<String, String> {
-    let mut colorization: u32 = 0;
-    let mut opaqueblend = BOOL(0);
-    unsafe {
-        match DwmGetColorizationColor(&mut colorization, &mut opaqueblend).ok() {
-            Some(_) => {
-                let r = (colorization >> 16) & 0xFF;
-                let g = (colorization >> 8) & 0xFF;
-                let b = colorization & 0xFF;
-
-                let rgb = format!("#{:02X}{:02X}{:02X}", r, g, b);
-                Ok(rgb)
-            }
-            None => Err("Failed to get colorization color".to_string()),
-        }
     }
 }
 
@@ -320,6 +361,7 @@ fn get_dll_product_version() -> Result<String, String> {
 fn main() {
     let mut flags = StateFlags::all();
     flags.remove(StateFlags::VISIBLE);
+    flags.remove(StateFlags::DECORATIONS);
 
     tauri::Builder::default()
         .plugin(
@@ -345,13 +387,18 @@ fn main() {
             list_audio_devices,
             load_config,
             save_config,
-            get_accent_color,
             get_windows_version,
             get_dll_product_version,
             save_config_to_file,
             load_config_from_file,
+            get_accent_colors_command,
         ])
-        .setup(|_app| Ok(()))
+        .setup(|app| {
+            let window: WebviewWindow = app.get_webview_window("main").unwrap();
+            setup_accent_change_listener(window);
+
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

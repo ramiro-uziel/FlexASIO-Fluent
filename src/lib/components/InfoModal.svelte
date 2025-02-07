@@ -2,19 +2,14 @@
   import { onMount, onDestroy } from "svelte";
   import { Button, Tooltip } from "fluent-svelte";
   import { adjustBrightness } from "$lib/color";
-  import { accentColor } from "$lib/stores";
+  import { accent } from "$lib/stores";
   import { expoOut } from "svelte/easing";
   import { fade, fly } from "svelte/transition";
   import { invoke } from "@tauri-apps/api/core";
   import { open } from "@tauri-apps/plugin-shell";
   import { getVersion } from "@tauri-apps/api/app";
-  import {
-    checkVersion,
-    latestVersion,
-    updateAvailable,
-    setUpdateDismissed,
-    updateDismissed,
-  } from "$lib/app";
+  import { checkVersion, setUpdateDismissed } from "$lib/app";
+  import { latestVersion, updateAvailable, updateDismissed } from "$lib/stores";
 
   import DismissCircle from "@fluentui/svg-icons/icons/dismiss_circle_20_regular.svg?component";
 
@@ -72,10 +67,10 @@
   <button
     class="modal p-6 rounded-lg shadow-2xl shadow-black/50 cursor-default border border-white border-opacity-10"
     style="--modal-light: {adjustBrightness(
-      $accentColor,
-      900,
-      -90
-    )}; --modal-dark: {adjustBrightness($accentColor, -92, -5)};"
+      $accent,
+      0,
+      80
+    )}; --modal-dark: {adjustBrightness($accent, -92, -5)};"
     on:click|stopPropagation
     in:fly={{
       x: 0,
@@ -141,11 +136,11 @@
           class="flex flex-row justify-between items-center p-4 rounded-md accent-card"
           style="--accent-card-light: {$updateDismissed
             ? 'var(--fds-card-background-default)'
-            : adjustBrightness($accentColor, 50, -30)};
+            : adjustBrightness($accent, 100, 50)};
             
             --accent-card-dark: {$updateDismissed
             ? 'var(--fds-card-background-default)'
-            : adjustBrightness($accentColor, -40, 130)};"
+            : adjustBrightness($accent, -50, 0)};"
         >
           <div class="text-left">
             <p class="font-medium text-sm">Update available</p>
