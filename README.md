@@ -9,8 +9,10 @@ GUI for [FlexASIO](https://github.com/dechamps/FlexASIO) TOML configuration file
 ### Download
 [Releases page](https://github.com/ramiro-uziel/FlexASIO-Fluent/releases/)
 
-### Note
-FlexASIO-Fluent is only a user interface that modifies a configuration file.  Audio and device issues should go to [FlexASIO](https://github.com/dechamps/FlexASIO) (and viceversa, GUI issues to this repo)
+### Notes
+- This project is not affiliated with FlexASIO!
+- FlexASIO-Fluent is only a user interface that modifies a configuration file.
+- Audio and device issues should go to [FlexASIO](https://github.com/dechamps/FlexASIO) (and viceversa, GUI issues to this repo)
 
 ### Compatibility
 This overwrites the registry entry made by FlexASIO GUI on install. This means that if you open a DAW or any other software that can call to open a configuration GUI, it will open this one. If you want to revert to FlexASIO GUI, uninstall this first, then reinstall FlexASIO GUI.
